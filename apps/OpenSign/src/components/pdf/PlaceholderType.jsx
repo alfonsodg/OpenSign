@@ -343,12 +343,37 @@ function PlaceholderType(props) {
             fontSize: fontSize,
             color: fontColor,
             background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: "none"
+            pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
           }}
           name="text"
-          readOnly
+          readOnly={!(props.isPlaceholder && !props.isNeedSign)}
           disabled={props.isNeedSign && isReadOnly}
           cols="50"
+          onClick={(e) => {
+            if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+          }}
+          onChange={(e) => {
+            if (props.isPlaceholder && !props.isNeedSign) {
+              const val = e.target.value;
+              setwidgetValue(val);
+              if (props.setXyPosition) {
+                onChangeInput(
+                  val,
+                  props.pos,
+                  props.xyPosition,
+                  props.index,
+                  props.setXyPosition,
+                  props.data?.Id || props.uniqueId,
+                  false,
+                  null,
+                  props.pos?.options?.fontSize || 12,
+                  props.pos?.options?.fontColor || "black",
+                  null,
+                  null
+                );
+              }
+            }
+          }}
         />
       ) : (
         <div style={textWidgetStyle} className="select-none-cls">
@@ -435,74 +460,149 @@ function PlaceholderType(props) {
         </div>
       );
     }
-    case "name":
-      return iswidgetEnable ? (
-        <textarea
-          readOnly
-          placeholder={formatWidgetName()}
-          rows={1}
-          value={
-                widgetValue
-          }
-          className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
-          style={{
-            fontSize: fontSize,
-            color: fontColor,
-            background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: "none"
-          }}
-          cols="50"
-          disabled={props.isNeedSign && isReadOnly}
-        />
-      ) : (
+case "name":
+        return iswidgetEnable ? (
+          <textarea
+            placeholder={formatWidgetName()}
+            rows={1}
+            value={
+                  widgetValue
+            }
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            style={{
+              fontSize: fontSize,
+              color: fontColor,
+              background: isReadOnly ? props.data?.blockColor : "white",
+              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+            }}
+            cols="50"
+            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            disabled={props.isNeedSign && isReadOnly}
+            onClick={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+            }}
+            onChange={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) {
+                const val = e.target.value;
+                setwidgetValue(val);
+                if (props.setXyPosition) {
+                  onChangeInput(
+                    val,
+                    props.pos,
+                    props.xyPosition,
+                    props.index,
+                    props.setXyPosition,
+                    props.data?.Id || props.uniqueId,
+                    false,
+                    null,
+                    props.pos?.options?.fontSize || 12,
+                    props.pos?.options?.fontColor || "black",
+                    null,
+                    null
+                  );
+                }
+              }
+            }}
+          />
+        ) : (
         <div className="flex h-full select-none-cls" style={textWidgetStyle}>
           <span className="ml-0.5">{formatWidgetName()}</span>
         </div>
       );
-    case "company":
-      return iswidgetEnable ? (
-        <textarea
-          readOnly
-          placeholder={formatWidgetName()}
-          rows={1}
-          value={
-                widgetValue
-          }
-          className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
-          style={{
-            fontSize: fontSize,
-            color: fontColor,
-            background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: "none"
-          }}
-          cols="50"
-          disabled={props.isNeedSign && isReadOnly}
-        />
-      ) : (
+case "company":
+        return iswidgetEnable ? (
+          <textarea
+            placeholder={formatWidgetName()}
+            rows={1}
+            value={
+                  widgetValue
+            }
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            style={{
+              fontSize: fontSize,
+              color: fontColor,
+              background: isReadOnly ? props.data?.blockColor : "white",
+              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+            }}
+            cols="50"
+            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            disabled={props.isNeedSign && isReadOnly}
+            onClick={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+            }}
+            onChange={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) {
+                const val = e.target.value;
+                setwidgetValue(val);
+                if (props.setXyPosition) {
+                  onChangeInput(
+                    val,
+                    props.pos,
+                    props.xyPosition,
+                    props.index,
+                    props.setXyPosition,
+                    props.data?.Id || props.uniqueId,
+                    false,
+                    null,
+                    props.pos?.options?.fontSize || 12,
+                    props.pos?.options?.fontColor || "black",
+                    null,
+                    null
+                  );
+                }
+              }
+            }}
+          />
+        ) : (
         <div style={textWidgetStyle} className="select-none-cls">
           <span className="ml-0.5">{formatWidgetName()}</span>
         </div>
       );
-    case "job title":
-      return iswidgetEnable ? (
-        <textarea
-          readOnly
-          placeholder={formatWidgetName()}
-          rows={1}
-          value={
-                widgetValue
-          }
-          className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
-          style={{
-            fontSize: fontSize,
-            color: fontColor,
-            background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: "none"
-          }}
-          cols="50"
-          disabled={props.isNeedSign && isReadOnly}
-        />
-      ) : (
+case "job title":
+        return iswidgetEnable ? (
+          <textarea
+            placeholder={formatWidgetName()}
+            rows={1}
+            value={
+                  widgetValue
+            }
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            style={{
+              fontSize: fontSize,
+              color: fontColor,
+              background: isReadOnly ? props.data?.blockColor : "white",
+              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+            }}
+            cols="50"
+            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            disabled={props.isNeedSign && isReadOnly}
+            onClick={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+            }}
+            onChange={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) {
+                const val = e.target.value;
+                setwidgetValue(val);
+                if (props.setXyPosition) {
+                  onChangeInput(
+                    val,
+                    props.pos,
+                    props.xyPosition,
+                    props.index,
+                    props.setXyPosition,
+                    props.data?.Id || props.uniqueId,
+                    false,
+                    null,
+                    props.pos?.options?.fontSize || 12,
+                    props.pos?.options?.fontColor || "black",
+                    null,
+                    null
+                  );
+                }
+              }
+            }}
+          />
+        ) : (
         <div style={textWidgetStyle} className="select-none-cls">
           <span className="ml-0.5">{formatWidgetName()}</span>
         </div>
@@ -560,26 +660,51 @@ function PlaceholderType(props) {
           )}
         </div>
       );
-    case "email":
-      return iswidgetEnable ? (
-        <textarea
-          readOnly
-          placeholder={formatWidgetName()}
-          rows={1}
-          value={
-                widgetValue
-          }
-          className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
-          style={{
-            fontSize: fontSize,
-            color: fontColor,
-            background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: "none"
-          }}
-          cols="1"
-          disabled={props.isNeedSign && isReadOnly}
-        />
-      ) : (
+case "email":
+        return iswidgetEnable ? (
+          <textarea
+            placeholder={formatWidgetName()}
+            rows={1}
+            value={
+                  widgetValue
+            }
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            style={{
+              fontSize: fontSize,
+              color: fontColor,
+              background: isReadOnly ? props.data?.blockColor : "white",
+              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+            }}
+            cols="1"
+            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            disabled={props.isNeedSign && isReadOnly}
+            onClick={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+            }}
+            onChange={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) {
+                const val = e.target.value;
+                setwidgetValue(val);
+                if (props.setXyPosition) {
+                  onChangeInput(
+                    val,
+                    props.pos,
+                    props.xyPosition,
+                    props.index,
+                    props.setXyPosition,
+                    props.data?.Id || props.uniqueId,
+                    false,
+                    null,
+                    props.pos?.options?.fontSize || 12,
+                    props.pos?.options?.fontColor || "black",
+                    null,
+                    null
+                  );
+                }
+              }
+            }}
+          />
+        ) : (
         <div style={textWidgetStyle} className="select-none-cls">
           <span className="ml-0.5">{formatWidgetName()}</span>
         </div>
@@ -649,27 +774,53 @@ function PlaceholderType(props) {
           ))}
         </div>
       );
-    case textWidget:
-      return (
-        <textarea
-          name="text"
-          ref={textRef}
-          readOnly
-          placeholder={t("widgets-name.text")}
-          rows={50}
-          cols={50}
-          defaultValue={
-                widgetValue
-          }
-          style={{
-            fontFamily: "Arial, sans-serif",
-            fontSize: fontSize,
-            color: fontColor,
-            background: "white"
-          }}
-          className="w-full resize-none overflow-hidden text-base-content item-center outline-none"
-        />
-      );
+case textWidget:
+        return (
+          <textarea
+            name="text"
+            ref={textRef}
+            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            placeholder={t("widgets-name.text")}
+            rows={50}
+            cols={50}
+            value={
+                  widgetValue
+            }
+            style={{
+              fontFamily: "Arial, sans-serif",
+              fontSize: fontSize,
+              color: fontColor,
+              background: "white",
+              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+            }}
+            className="w-full resize-none overflow-hidden text-base-content item-center outline-none"
+            onClick={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+            }}
+            onChange={(e) => {
+              if (props.isPlaceholder && !props.isNeedSign) {
+                const val = e.target.value;
+                setwidgetValue(val);
+                if (props.setXyPosition) {
+                  onChangeInput(
+                    val,
+                    props.pos,
+                    props.xyPosition,
+                    props.index,
+                    props.setXyPosition,
+                    props.data?.Id || props.uniqueId,
+                    false,
+                    null,
+                    props.pos?.options?.fontSize || 12,
+                    props.pos?.options?.fontColor || "black",
+                    null,
+                    null
+                  );
+                }
+              }
+            }}
+          />
+        );
     case drawWidget:
       return prefillImgLoad[props.pos?.key] ? (
         <div className="absolute w-full h-full inset-0 flex justify-center items-center bg-white/30 z-50">
