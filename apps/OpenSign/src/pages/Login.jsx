@@ -209,10 +209,10 @@ function Login() {
           logOutUser();
         }
       } catch (error) {
-        console.error("err in fetching extUser", err);
-        showToast("danger", `${err.message}`);
-        const payload = { sessionToken: _user.sessionToken };
-        handleSubmitbtn(payload);
+        console.error("err in fetching extUser", error);
+        showToast("danger", `${error?.message || t("something-went-wrong-mssg")}`);
+        const payload = { sessionToken: _user?.sessionToken };
+        if (payload.sessionToken) handleSubmitbtn(payload);
       } finally {
         setThirdpartyLoader(false);
       }
@@ -305,15 +305,16 @@ function Login() {
             email: userInformation.email,
             phone: userInformation?.phone || "",
             company: userDetails.Company,
-            jobTitle: userDetails.JobTitle
+            jobTitle: userDetails.Destination
           };
           localStorage.setItem("userDetails", JSON.stringify(LocalUserDetails));
           thirdpartyLoginfn(userSignUp.sessionToken);
         } else {
-          alert(userSignUp.message);
+          alert(userSignUp?.message || t("something-went-wrong-mssg"));
         }
       } else if (
         payload &&
+        typeof payload.message === "string" &&
         payload.message.replace(/ /g, "_") === "Internal_server_err"
       ) {
         alert(t("server-error"));
