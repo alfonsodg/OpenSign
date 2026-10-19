@@ -408,16 +408,52 @@ function PlaceholderType(props) {
         />
       );
     }
-    case "dropdown":
-      return (
-        <div
-          style={textWidgetStyle}
-          className="select-none-cls flex justify-between items-center"
-        >
-          {widgetData?.trim() || t("choose-one")}
-          <i className="fa-light fa-circle-chevron-down mr-1 "></i>
-        </div>
-      );
+case "dropdown":
+        return props.isPlaceholder && !props.isNeedSign ? (
+          <select
+            value={widgetValue?.trim() || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              setwidgetValue(val);
+              if (props.setXyPosition) {
+                onChangeInput(
+                  val,
+                  props.pos,
+                  props.xyPosition,
+                  props.index,
+                  props.setXyPosition,
+                  props.data?.Id || props.uniqueId,
+                  false,
+                  null,
+                  props.pos?.options?.fontSize || 12,
+                  props.pos?.options?.fontColor || "black",
+                  null,
+                  null
+                );
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full h-full text-base-content outline-none bg-transparent"
+            style={{ fontSize: fontSize, color: fontColor }}
+          >
+            <option value="" disabled hidden>
+              {t("choose-one")}
+            </option>
+            {(props.pos?.options?.values || []).map((data, ind) => (
+              <option key={ind} value={data?.trim()}>
+                {data?.trim()}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div
+            style={textWidgetStyle}
+            className="select-none-cls flex justify-between items-center"
+          >
+            {widgetData?.trim() || t("choose-one")}
+            <i className="fa-light fa-circle-chevron-down mr-1 "></i>
+          </div>
+        );
     case "initials": {
       const iniRotation = props.pos.options?.rotation;
       const iniIsSwapped = [90, 270].includes(iniRotation);
