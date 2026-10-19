@@ -19,8 +19,13 @@ async function AuthLoginAsMail(request) {
 
     if (res !== undefined) {
       let resOtp = res.get('OTP');
+      const expiresAt = res.get('ExpiresAt');
+      if (expiresAt && new Date(expiresAt) < new Date()) {
+        return 'Invalid Otp';
+      }
 
       if (resOtp === otp) {
+        try { await res.destroy({ useMasterKey: true }); } catch (e) { /* ignore */ }
         var result = await getToken(request);
         if (result && !result?.emailVerified) {
           const userQuery = new Parse.Query(Parse.User);
