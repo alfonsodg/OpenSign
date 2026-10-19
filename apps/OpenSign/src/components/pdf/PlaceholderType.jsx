@@ -293,8 +293,10 @@ function PlaceholderType(props) {
               : undefined
           }}
         >
-          {props.pos.options?.values?.map((data, ind) => (
-            <div key={ind} className="select-none-cls pointer-events-none">
+          {props.pos.options?.values?.map((data, ind) => {
+            const isAuthoring = props.isPlaceholder && !props.isNeedSign;
+            return (
+            <div key={ind} className={isAuthoring ? "" : "select-none-cls pointer-events-none"}>
               <label
                 htmlFor={`checkbox-${props.pos.key + ind}`}
                 style={{
@@ -314,19 +316,56 @@ function PlaceholderType(props) {
                   className="op-checkbox rounded-[1px]"
                   disabled={props.isNeedSign && isReadOnly}
                   type="checkbox"
-                  readOnly
+                  readOnly={!isAuthoring}
                   checked={
-                    !props?.isPrefillModal
-                      ? !!selectCheckbox(ind, selectedCheckbox)
-                      : false
+                    isAuthoring
+                      ? selectedCheckbox?.includes(ind)
+                      : !props?.isPrefillModal
+                        ? !!selectCheckbox(ind, selectedCheckbox)
+                        : false
                   }
+                  onClick={(e) => {
+                    if (isAuthoring) e.stopPropagation();
+                  }}
+                  onChange={(e) => {
+                    if (!isAuthoring) return;
+                    const isChecked = e.target.checked;
+                    let updateSelectedCheckbox = selectedCheckbox
+                      ? [...selectedCheckbox]
+                      : [];
+                    if (isChecked) {
+                      updateSelectedCheckbox.push(ind);
+                    } else {
+                      updateSelectedCheckbox = updateSelectedCheckbox.filter(
+                        (d) => d !== ind
+                      );
+                    }
+                    setSelectedCheckbox(updateSelectedCheckbox);
+                    if (props.setXyPosition) {
+                      onChangeInput(
+                        updateSelectedCheckbox,
+                        props.pos,
+                        props.xyPosition,
+                        props.index,
+                        props.setXyPosition,
+                        props.data?.Id || props.uniqueId,
+                        false,
+                        null,
+                        props.pos?.options?.fontSize || 12,
+                        props.pos?.options?.fontColor || "black",
+                        null,
+                        null
+                      );
+                    }
+                  }}
                 />
                 {!props.pos.options?.isHideLabel && (
                   <span className="leading-none">{data}</span>
                 )}
               </label>
             </div>
-          ))}
+            );
+          })}
         </div>
       );
     case textInputWidget:
