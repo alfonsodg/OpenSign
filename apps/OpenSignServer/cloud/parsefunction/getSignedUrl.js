@@ -93,12 +93,18 @@ export async function getSignedUrl(request) {
 
         // Bind the requested URL to the fetched document/template to prevent
         // arbitrary-object presigning (including /files/ token minting).
+        // Compare by basename to tolerate query strings / trailing slashes.
+        const basename = (u) => String(u || '').split('?')[0].split('/').pop();
         const allowedUrls = [
           _resDoc?.URL,
           _resDoc?.SignedUrl,
           _resDoc?.CertificateUrl,
         ].filter(Boolean);
-        if (allowedUrls.length && !allowedUrls.includes(url)) {
+        const urlBase = basename(url);
+        const isAllowed =
+          !allowedUrls.length ||
+          allowedUrls.some((u) => basename(u) === urlBase);
+        if (!isAllowed) {
           throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'URL not associated with this document.');
         }
 
