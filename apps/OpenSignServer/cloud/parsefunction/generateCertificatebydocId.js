@@ -56,7 +56,11 @@ export default async function generateCertificatebydocId(req) {
     );
     const docRes = await getDocument.get(docId, { useMasterKey: true });
 
-    if (docRes && docRes?.get('IsCompleted') && !docRes?.get('CertificateUrl')) {
+    if (docRes && docRes?.get('IsCompleted')) {
+    const existingCert = docRes?.get('CertificateUrl');
+    if (existingCert) {
+      return { CertificateUrl: existingCert };
+    }
       const _docRes = JSON.parse(JSON.stringify(docRes));
       const filteredaudit = _docRes?.AuditTrail?.filter(x => x?.UserPtr?.objectId);
       // Create a reversed copy of the array and find the last object with 'signedOn'
