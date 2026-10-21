@@ -48,7 +48,11 @@ export default async function GenerateCertificate(docDetails) {
   const textWidth = timesRomanFont.widthOfTextAtSize(generatedOn, 12);
   const margin = 30;
   const maxX = width - margin - textWidth; // Ensures text stays inside the border with 30px margin
-  const OriginIp = docDetails?.OriginIp || '';
+  const OriginIp =
+  docDetails?.OriginIp ||
+  (Array.isArray(docDetails?.AuditTrail) && docDetails.AuditTrail.length
+    ? docDetails.AuditTrail.find((a) => a?.ipAddress)?.ipAddress || ''
+    : '');
   const company = docDetails?.ExtUserPtr?.Company || '';
   const documentHash = docDetails?.DocumentHash || '';
   const createdAt = docDetails?.DocSentAt?.iso || docDetails.createdAt;

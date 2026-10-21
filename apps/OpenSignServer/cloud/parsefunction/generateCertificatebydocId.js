@@ -55,6 +55,11 @@ export default async function generateCertificatebydocId(req) {
       'ExtUserPtr,Signers,AuditTrail.UserPtr,Placeholders,ExtUserPtr.TenantId,ExtUserPtr.UserId'
     );
     const docRes = await getDocument.get(docId, { useMasterKey: true });
+    const requestIp = req?.headers?.['x-real-ip'] || '';
+    if (docRes && !docRes.get('OriginIp') && requestIp) {
+      docRes.set('OriginIp', requestIp);
+      await docRes.save(null, { useMasterKey: true });
+    }
 
     if (docRes && docRes?.get('IsCompleted')) {
     const existingCert = docRes?.get('CertificateUrl');
