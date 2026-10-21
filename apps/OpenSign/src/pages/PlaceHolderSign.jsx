@@ -1023,8 +1023,15 @@ function PlaceHolderSign() {
         return signersdata.find((y) => y.Id === x.Id).Name;
       });
       const signerName = getSigner.join(", ");
-      setSignersName(signerName);
-      setIsSendAlert({ mssg: "sure", alert: true });
+      const proceed = window.confirm(
+        t("sure-send-without-widget", { names: signerName }) ||
+          `Some recipients (${signerName}) have no signature widget. Send anyway?`
+      );
+      if (!proceed) {
+        setUniqueId(unassignedWidget[0]?.Id);
+        setRoleName("");
+        return;
+      }
       setUniqueId(unassignedWidget[0]?.Id);
       setRoleName("");
     }
