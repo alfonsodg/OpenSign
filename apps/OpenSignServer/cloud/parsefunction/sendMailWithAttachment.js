@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import https from 'https';
 import formData from 'form-data';
 import Mailgun from 'mailgun.js';
-import { appName, smtpenable, smtpsecure, updateMailCount } from '../../Utils.js';
+import { appName, smtpenable, smtpsecure, updateMailCount, stripHtml } from '../../Utils.js';
 import { createTransport } from 'nodemailer';
 import axios from 'axios';
 
@@ -158,7 +158,7 @@ https
             from: displayName + ' <' + mailsender + '>',
             to: params.recipient,
             subject: params.subject,
-            text: params.text || 'mail',
+            text: params.text || stripHtml(params?.html) || 'mail',
             html: params?.html ? params.html + reportMsg : '',
             attachments: smtpenable ? attachment : undefined,
             attachment: smtpenable ? undefined : attachment,
@@ -212,7 +212,7 @@ https
         from: displayName + ' <' + mailsender + '>',
         to: params.recipient,
         subject: params.subject,
-        text: params.text || 'mail',
+        text: params.text || stripHtml(params?.html) || 'mail',
         html: params?.html ? params.html + reportMsg : '',
         bcc: params.bcc ? params.bcc : undefined,
         cc: params.cc ? params.cc : undefined,

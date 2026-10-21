@@ -335,7 +335,7 @@ async function sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, file
   if (doc.IsSendMail === false) {
     console.log("don't send mail");
   } else {
-    sendCompletedMail({ isCustomMail, doc, mailProvider, filename });
+    await sendCompletedMail({ isCustomMail, doc, mailProvider, filename });
   }
   saveFileUsage(CertificateBuffer.length, file.imageUrl, doc?.CreatedBy?.objectId);
   unlinkFile(pfx.name);
@@ -564,7 +564,7 @@ async function PDF(req) {
           if (hashForDoc) {
             doc.DocumentHash = hashForDoc;
           }
-          sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, `signed_${name}`);
+          await sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, `signed_${name}`);
         } else {
           unlinkFile(pfxname);
         }

@@ -1,6 +1,6 @@
 import formData from 'form-data';
 import Mailgun from 'mailgun.js';
-import { appName, smtpenable, smtpsecure, updateMailCount } from '../../Utils.js';
+import { appName, smtpenable, smtpsecure, updateMailCount, stripHtml } from '../../Utils.js';
 import { createTransport } from 'nodemailer';
 async function sendMailProvider(req) {
   const app = appName;
@@ -46,7 +46,7 @@ async function sendMailProvider(req) {
       from: displayName + ' <' + mailsender + '>',
       to: req.params.recipient,
       subject: req.params.subject,
-      text: req.params.text || 'mail',
+      text: req.params.text || stripHtml(req.params?.html) || 'mail',
       html: req.params?.html ? req.params.html + reportMsg : '',
       bcc: req.params.bcc ? req.params.bcc : undefined,
       replyTo: replyto ? replyto : undefined,
