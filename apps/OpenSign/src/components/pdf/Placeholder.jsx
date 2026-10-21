@@ -259,7 +259,11 @@ function Placeholder(props) {
       } else if (props?.data?.Role === "prefill") {
         props?.handleClosePrefillTour?.();
         props?.closeWidgetTour?.();
-        dispatch(setIsShowModal({ [props.pos.key]: true }));
+        // Inline editing: only open the settings modal via the gear icon,
+        // not on plain click, so value editing happens in the field itself.
+        if (props?.isNeedSign) {
+          dispatch(setIsShowModal({ [props.pos.key]: true }));
+        }
         props.setUniqueId(props?.data?.Id);
         props?.setRoleName("prefill");
       }
