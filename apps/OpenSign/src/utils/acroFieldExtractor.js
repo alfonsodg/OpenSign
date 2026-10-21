@@ -1,4 +1,4 @@
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFName } from "pdf-lib";
 
 export const clearAcroFields = async (pdfFile) => {
   const pdfDoc = await PDFDocument.load(pdfFile, { ignoreEncryption: true });

@@ -3375,7 +3375,7 @@ export const getDefaultSignature = async (objectId) => {
 //function to rotate pdf page
 export async function rotatePdfPage(rotateDegree, pageNumber, pdfArrayBuffer) {
   // Load the existing PDF
-  const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+  const pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
   // Get the page according to page number
   const page = pdfDoc.getPage(pageNumber);
   //get current page rotation angle
@@ -3628,7 +3628,7 @@ export const formatDateToDdMmmYyyy = (date) => {
 export const deletePdfPage = async (pdfArrayBuffer, pageNumber) => {
   try {
     // Load the existing PDF
-    const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+    const pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
     // Get the total number of pages
     const totalPages = pdfDoc.getPageCount();
     // Ensure the page index is valid
@@ -3655,7 +3655,7 @@ export const deletePdfPage = async (pdfArrayBuffer, pageNumber) => {
 
 export const reorderPdfPages = async (pdfArrayBuffer, orderArr) => {
   try {
-    const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+    const pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
     const newPdf = await PDFDocument.create();
     const pages = await newPdf.copyPages(
       pdfDoc,
@@ -4529,7 +4529,6 @@ export const decryptPdf = async (file, password) => {
   formData.append("file", file);
   formData.append("password", password);
   const config = {
-    headers: { "content-type": "multipart/form-data" },
     responseType: "blob"
   };
   const response = await axios.post(url, formData, config);

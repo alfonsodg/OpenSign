@@ -730,7 +730,7 @@ function PdfRequestFiles(
               //condition to embed prefill widgets details in pdf in public signing flow
               if (prefillDetails && props.templateId) {
                 const prefillwidgets = prefillDetails?.placeHolder;
-                const pdfDoc = await PDFDocument.load(pdfArrBuffer);
+                const pdfDoc = await PDFDocument.load(pdfArrBuffer, { ignoreEncryption: true });
                 const pdfbase64 = await embedWidgetsToDoc(
                   prefillwidgets,
                   pdfDoc,
@@ -754,7 +754,7 @@ function PdfRequestFiles(
               setHandleError("Document not Found!");
             }
             try {
-              const pdfDoc = await PDFDocument.load(pdfArrBuffer);
+              const pdfDoc = await PDFDocument.load(pdfArrBuffer, { ignoreEncryption: true });
               const extUserPtr = pdfDetails[0].ExtUserPtr;
               const HeaderDocId = extUserPtr?.HeaderDocId;
               //embed document's object id to all pages in pdf document

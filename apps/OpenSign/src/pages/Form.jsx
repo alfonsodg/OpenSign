@@ -269,7 +269,6 @@ const Forms = (props) => {
             setpercentage(0);
             const config = {
               headers: {
-                "content-type": "multipart/form-data",
                 sessiontoken: Parse.User.current().getSessionToken()
               },
               signal: abortController.signal,

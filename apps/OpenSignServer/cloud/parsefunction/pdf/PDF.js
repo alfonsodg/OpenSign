@@ -306,7 +306,7 @@ async function sendCompletedMail(obj) {
 // `sendMailsaveCertifcate` is used send completion mail and update complete status of document
 async function sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, filename) {
   const certificate = await GenerateCertificate(doc);
-  const certificatePdf = await PDFDocument.load(certificate);
+  const certificatePdf = await PDFDocument.load(certificate, { ignoreEncryption: true });
   const P12Buffer = fs.readFileSync(pfx.name);
   const p12 = new P12Signer(P12Buffer, { passphrase: pfx.passphrase || null });
   //  `pdflibAddPlaceholder` is used to add code of only digitial sign in certificate
@@ -358,7 +358,7 @@ async function sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, file
  */
 async function processPdf(_resDoc, PdfBuffer, reason) {
   // No CC merge; operate directly on the original PDF
-  const pdfDoc = await PDFDocument.load(PdfBuffer);
+  const pdfDoc = await PDFDocument.load(PdfBuffer, { ignoreEncryption: true });
   const form = pdfDoc.getForm();
   // Updates the field appearances to ensure visual changes are reflected.
   form.updateFieldAppearances();

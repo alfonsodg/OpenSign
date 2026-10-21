@@ -102,7 +102,7 @@ const EditTemplate = ({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
   const getPdfMetadataHash = async (pdfBytes) => {
-    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
     const pages = pdfDoc.getPages();
     const metaString = pages
       .map((page, index) => {

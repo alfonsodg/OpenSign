@@ -691,7 +691,7 @@ function SignYourSelf() {
           setIsUiLoading(true);
           // Load a PDFDocument from the existing PDF bytes
           try {
-            const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+            const pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
             const isSignYourSelfFlow = true;
             const extUserPtr = pdfDetails[0].ExtUserPtr;
             const HeaderDocId = extUserPtr?.HeaderDocId;

@@ -126,7 +126,7 @@ function Header(props) {
       const uploadedPdfDoc = await PDFDocument.load(uploadedPdfBytes, {
         ignoreEncryption: true
       });
-      const basePdfDoc = await PDFDocument.load(props.pdfArrayBuffer);
+      const basePdfDoc = await PDFDocument.load(props.pdfArrayBuffer, { ignoreEncryption: true });
 
       // Copy pages from the uploaded PDF to the base PDF
       const uploadedPdfPages = await basePdfDoc.copyPages(
