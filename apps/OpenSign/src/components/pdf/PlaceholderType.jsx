@@ -418,7 +418,8 @@ const canEditInline =
             fontSize: fontSize,
             color: fontColor,
             background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: canEditInline ? "auto" : "none"
+            pointerEvents: canEditInline ? "auto" : "none",
+            WebkitTextSecurity: props.pos?.options?.isMasked ? "disc" : "none"
           }}
           name="text"
           readOnly={!(canEditInline)}
@@ -584,7 +585,8 @@ case "name":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: canEditInline ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none",
+            WebkitTextSecurity: props.pos?.options?.isMasked ? "disc" : "none"
             }}
             cols="50"
             readOnly={!(canEditInline)}
@@ -633,7 +635,8 @@ case "company":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: canEditInline ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none",
+            WebkitTextSecurity: props.pos?.options?.isMasked ? "disc" : "none"
             }}
             cols="50"
             readOnly={!(canEditInline)}
@@ -682,7 +685,8 @@ case "job title":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: canEditInline ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none",
+            WebkitTextSecurity: props.pos?.options?.isMasked ? "disc" : "none"
             }}
             cols="50"
             readOnly={!(canEditInline)}
@@ -784,7 +788,8 @@ case "email":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: canEditInline ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none",
+            WebkitTextSecurity: props.pos?.options?.isMasked ? "disc" : "none"
             }}
             cols="1"
             readOnly={!(canEditInline)}
@@ -902,7 +907,8 @@ case textWidget:
               fontSize: fontSize,
               color: fontColor,
               background: "white",
-              pointerEvents: canEditInline ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none",
+            WebkitTextSecurity: props.pos?.options?.isMasked ? "disc" : "none"
             }}
             className="w-full resize-none overflow-hidden text-base-content item-center outline-none"
             onClick={(e) => {
