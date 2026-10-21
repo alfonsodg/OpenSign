@@ -453,7 +453,8 @@ async function PDF(req) {
     }
     const username = signUser.Name;
     const userEmail = signUser.Email;
-    if (req.params.pdfFile && typeof req.params.pdfFile === 'string') {
+    console.log('DEBUG signPdf pdfFile type:', typeof req.params.pdfFile, 'len:', req.params.pdfFile?.length);
+if (req.params.pdfFile && typeof req.params.pdfFile === 'string') {
       //  `PdfBuffer` used to create buffer from pdf file
       let PdfBuffer = Buffer.from(req.params.pdfFile, 'base64');
       //  `P12Buffer` used to create buffer from p12 certificate
