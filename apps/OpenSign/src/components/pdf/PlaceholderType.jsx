@@ -56,6 +56,42 @@ const canEditInline =
     : "";
   const [widgetValue, setwidgetValue] = useState();
   const [inlineError, setInlineError] = useState(false);
+
+  // Linked fields: propagate value to siblings sharing the same name (#31)
+  const propagateLinked = (val) => {
+    if (!canEditInline || !props.setXyPosition) return;
+    const name = props.pos?.options?.name;
+    if (!name) return;
+    props.setXyPosition((prev) => {
+      const isSignerList = prev.some((d) => d.signerPtr || d.Role === "prefill");
+      const updatePos = (pos) => {
+        if (pos.key === props.pos.key) return pos;
+        if (pos?.options?.name === name) {
+          return { ...pos, options: { ...pos.options, response: val } };
+        }
+        return pos;
+      };
+      if (isSignerList) {
+        const signerId = props.data?.Id || props.uniqueId;
+        const filterSignerPos = prev.filter((d) => d.Id === signerId);
+        if (filterSignerPos.length > 0) {
+          const getPlaceHolder = filterSignerPos[0].placeHolder;
+          const updatedPlaceHolder = getPlaceHolder.map((ph) => ({
+            ...ph,
+            pos: ph.pos.map(updatePos)
+          }));
+          return prev.map((obj) =>
+            obj.Id === signerId ? { ...obj, placeHolder: updatedPlaceHolder } : obj
+          );
+        }
+      } else {
+        return prev.map((obj, ind) =>
+          ind === props.index ? { ...obj, pos: obj.pos.map(updatePos) } : obj
+        );
+      }
+      return prev;
+    });
+  };
   const [selectedCheckbox, setSelectedCheckbox] = useState([]);
   const [imgUrl, setImgUrl] = useState("");
   const [date, setDate] = useState("");
@@ -85,6 +121,14 @@ const canEditInline =
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.pos, widgetData, type]);
+
+  // Linked fields: propagate value to siblings on change (#31)
+  useEffect(() => {
+    if (canEditInline && widgetValue !== undefined) {
+      propagateLinked(widgetValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [widgetValue]);
 
   // Inline validation for text fields (PandaDoc parity #34)
   useEffect(() => {
