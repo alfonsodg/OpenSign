@@ -148,7 +148,7 @@ export async function getSignedUrl(request) {
 // Function to generate a signed URL with JWT
 export function getSignedLocalUrl(fileUrl, expirationTimeInSeconds) {
   const secretKey = process.env.MASTER_KEY;
-  const exp = expirationTimeInSeconds || 200;
+  const exp = expirationTimeInSeconds || 3600;
   try {
     // Create the payload with the file URL and expiration time
     const payload = {
@@ -170,7 +170,7 @@ export function presignedlocalUrl(signedUrl, expirationTimeInSeconds) {
   if (signedUrl?.includes('/files/')) {
     const fileUrl = signedUrl.split('?')?.[0];
     const secretKey = process.env.MASTER_KEY;
-    const exp = expirationTimeInSeconds || 200;
+    const exp = expirationTimeInSeconds || 3600;
     try {
       // Create the payload with the file URL and expiration time
       const payload = {
