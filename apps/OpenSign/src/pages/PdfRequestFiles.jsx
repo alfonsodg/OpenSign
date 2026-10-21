@@ -798,6 +798,13 @@ function PdfRequestFiles(
                     isSuccessRoute,
                     contactId
                   );
+                  if (!updatedDoc || !updatedDoc.updatedPdfDetails) {
+                    setIsUiLoading(false);
+                    setIsSigned(true);
+                    setIsCelebration(true);
+                    setTimeout(() => setIsCelebration(false), 5000);
+                    return;
+                  }
                   const index =
                     updatedDoc.updatedPdfDetails?.[0]?.Signers.findIndex(
                       (x) => x.objectId === contactId
