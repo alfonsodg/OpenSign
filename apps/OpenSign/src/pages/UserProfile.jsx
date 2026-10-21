@@ -35,6 +35,8 @@ function UserProfile() {
   const [parseAppId] = useState(localStorage.getItem("parseAppId"));
   const [editmode, setEditMode] = useState(false);
   const [name, SetName] = useState(localStorage.getItem("username"));
+  const [email, setEmail] = useState(UserProfile && UserProfile.email);
+  const [originalEmail, setOriginalEmail] = useState(UserProfile && UserProfile.email);
   const [Phone, SetPhone] = useState(UserProfile && UserProfile.phone);
   const [Image, setImage] = useState(localStorage.getItem("profileImg"));
   const [isLoader, setIsLoader] = useState(false);
@@ -108,8 +110,13 @@ function UserProfile() {
                   Name: res.name,
                   Phone: res?.phone || ""
                 });
-                alert(t("profile-update-alert"));
-                setEditMode(false);
+                if ((email || "").toLowerCase().trim() !== (originalEmail || "").toLowerCase().trim()) {
+                  await handleSendOTP((email || "").toLowerCase().trim());
+                  setIsVerifyModal(true);
+                } else {
+                  alert(t("profile-update-alert"));
+                  setEditMode(false);
+                }
                 setIsLoader(false);
                 //navigate("/dashboard/35KBoSgoAK");
               }
@@ -219,7 +226,8 @@ function UserProfile() {
   //`handleVerifyBtn` function is used to send otp on user mail
   const handleVerifyBtn = async () => {
     setIsVerifyModal(true);
-    await handleSendOTP(Parse.User.current().getEmail());
+    const targetEmail = (email || "").toLowerCase().trim() || Parse.User.current().getEmail();
+    await handleSendOTP(targetEmail);
   };
   const handleCloseVerifyModal = async () => {
     setIsVerifyModal(false);
@@ -228,13 +236,23 @@ function UserProfile() {
   const handleVerifyEmail = async (e) => {
     e.preventDefault();
     setOtpLoader(true);
+    const targetEmail = (email || "").toLowerCase().trim() || Parse.User.current().getEmail();
     try {
       const resEmail = await Parse.Cloud.run("verifyemail", {
         otp: otp,
-        email: Parse.User.current().getEmail()
+        email: targetEmail
       });
-      if (resEmail?.message === "Email is verified.") {
+      if (resEmail?.message === "Email is verified." || resEmail?.message === "Email changed and verified.") {
+        const newEmail = targetEmail;
+        setEmail(newEmail);
+        setOriginalEmail(newEmail);
         setIsEmailVerified(true);
+        localStorage.setItem("userEmail", newEmail);
+        try {
+          const ui = JSON.parse(localStorage.getItem("UserInformation") || "{}");
+          ui.email = newEmail;
+          localStorage.setItem("UserInformation", JSON.stringify(ui));
+        } catch (e) { /* ignore */ }
         alert(t("Email-verified-alert-1"));
       } else if (resEmail?.message === "Email is already verified.") {
         setIsEmailVerified(true);
@@ -252,7 +270,8 @@ function UserProfile() {
   const handleResend = async (e) => {
     e.preventDefault();
     setOtpLoader(true);
-    await handleSendOTP(Parse.User.current().getEmail());
+    const targetEmail = (email || "").toLowerCase().trim() || Parse.User.current().getEmail();
+    await handleSendOTP(targetEmail);
     setOtpLoader(false);
     alert(t("otp-sent-alert"));
   };
@@ -260,6 +279,7 @@ function UserProfile() {
   const handleCancel = () => {
     setEditMode(false);
     SetName(localStorage.getItem("username"));
+    setEmail(originalEmail);
     SetPhone(UserProfile && UserProfile.phone);
     setImage(localStorage.getItem("profileImg"));
     setCompany(extendUser && extendUser?.[0]?.Company);
@@ -373,19 +393,17 @@ function UserProfile() {
                 )}
               </li>
               <li className="flex justify-between items-center border-b-[1px] border-gray-300 py-2 break-all">
-                <span
-                  data-tooltip-id="email-tooltip"
-                  className="font-semibold flex gap-1"
-                >
-                  {t("email")} :{" "}
-                  {editmode && (
-                    <Tooltip
-                      message={t("email-help")}
-                      maxWidth="max-w-[250px]"
-                    />
-                  )}
-                </span>
-                <span>{UserProfile && UserProfile.email}</span>
+                <span className="font-semibold">{t("email")} :</span>{" "}
+                {editmode ? (
+                  <input
+                    type="email"
+                    value={email}
+                    className="op-input op-input-bordered op-input-sm w-[180px] focus:outline-none hover:border-base-content text-sm"
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                ) : (
+                  <span>{UserProfile && UserProfile.email}</span>
+                )}
               </li>
               <li
                 className={`flex justify-between items-center border-b-[1px] border-gray-300 break-all ${
