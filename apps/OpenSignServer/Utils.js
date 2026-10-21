@@ -171,6 +171,46 @@ export function generateId(length) {
 export const flattenPdf = async pdfFile => {
   const pdfDoc = await PDFDocument.load(pdfFile, { ignoreEncryption: true });
 
+  // Preserve existing digital signatures: if the document contains a
+  // signature field (SigFlags or /FT /Sig), skip flattening to avoid
+  // invalidating the signature or dropping signature widgets.
+  try {
+    const acroFormEntry = pdfDoc.catalog.get(PDFName.of('AcroForm'));
+    const acroForm = pdfDoc.context.lookupMaybe
+      ? pdfDoc.context.lookupMaybe(acroFormEntry)
+      : pdfDoc.context.lookup(acroFormEntry);
+    if (acroForm) {
+      const sigFlags = acroForm.get(PDFName.of('SigFlags'));
+      if (sigFlags && Number(sigFlags) > 0) {
+        return pdfFile;
+      }
+      const fieldsRef = acroForm.get(PDFName.of('Fields'));
+      const fields = fieldsRef ? pdfDoc.context.lookup(fieldsRef) : null;
+      if (fields && fields.asArray) {
+        for (const fRef of fields.asArray()) {
+          const f = pdfDoc.context.lookup(fRef);
+          const ft = f?.get(PDFName.of('FT'));
+          if (ft && ft.toString() === '/Sig') {
+            return pdfFile;
+          }
+          const kidsRef = f?.get(PDFName.of('Kids'));
+          const kids = kidsRef ? pdfDoc.context.lookup(kidsRef) : null;
+          if (kids && kids.asArray) {
+            for (const kRef of kids.asArray()) {
+              const k = pdfDoc.context.lookup(kRef);
+              const kft = k?.get(PDFName.of('FT'));
+              if (kft && kft.toString() === '/Sig') {
+                return pdfFile;
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // If AcroForm inspection fails, continue with normal flatten.
+  }
+
   try {
     const acroFormEntry = pdfDoc.catalog.get(PDFName.of('AcroForm'));
     const acroForm = pdfDoc.context.lookupMaybe
