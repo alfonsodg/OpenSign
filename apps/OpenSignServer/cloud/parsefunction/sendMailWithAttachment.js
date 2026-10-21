@@ -63,8 +63,17 @@ async function sendMailProvider(params) {
             if (isSecure) {
 https
                  .get(params.url, async function (response) {
+                   if (response.statusCode !== 200) {
+                     Pdf.destroy();
+                     resolve('error');
+                     return;
+                   }
                    response.pipe(Pdf);
                    Pdf.on('finish', () => resolve('success'));
+                   Pdf.on('error', e => {
+                     console.error(`error: ${e.message}`);
+                     resolve('error');
+                   });
                    response.on('error', e => {
                      console.error(`error: ${e.message}`);
                      resolve('error');
@@ -97,17 +106,19 @@ https
         };
         // `writeToLocalDisk` is used to create pdf file from doc url
         const ress = await writeToLocalDisk();
-        if (ress) {
-          function readTolocal() {
-            return new Promise((resolve, reject) => {
-              setTimeout(() => {
-                let PdfBuffer = fs.readFileSync(Pdf.path);
-                resolve(PdfBuffer);
-              }, 100);
-            });
-          }
+        if (ress === 'success') {
           //  `PdfBuffer` used to create buffer from pdf file
-          let PdfBuffer = await readTolocal();
+          let PdfBuffer;
+          try {
+            PdfBuffer = fs.readFileSync(Pdf.path);
+          } catch (e) {
+            safeUnlink(testPdf, 'pdf');
+            return { status: 'error' };
+          }
+          if (!PdfBuffer || PdfBuffer.length === 0) {
+            safeUnlink(testPdf, 'pdf');
+            return { status: 'error' };
+          }
           const pdfName = params.pdfName && `${params.pdfName}.pdf`;
           const filename = params.filename;
           const file = {
@@ -118,20 +129,24 @@ https
 
           let attachment;
           const certificatePath = params.certificatePath || `./exports/certificate.pdf`;
+          let certificateBuffer = null;
           if (fs.existsSync(certificatePath)) {
             try {
-              //  `certificateBuffer` used to create buffer from pdf file
-              const certificateBuffer = fs.readFileSync(certificatePath);
-              const certificate = {
-                filename: 'certificate.pdf',
-                content: smtpenable ? certificateBuffer : undefined, //fs.readFileSync('./exports/exported_file_1223.pdf'),
-                data: smtpenable ? undefined : certificateBuffer,
-              };
-              attachment = [file, certificate];
+              const stat = fs.statSync(certificatePath);
+              if (stat.size > 0) {
+                certificateBuffer = fs.readFileSync(certificatePath);
+              }
             } catch (err) {
-              attachment = [file];
               console.log('sendMailWithAttachment read certificate error', err);
             }
+          }
+          if (certificateBuffer && certificateBuffer.length > 0) {
+            const certificate = {
+              filename: 'certificate.pdf',
+              content: smtpenable ? certificateBuffer : undefined,
+              data: smtpenable ? undefined : certificateBuffer,
+            };
+            attachment = [file, certificate];
           } else {
             attachment = [file];
           }
