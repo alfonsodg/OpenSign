@@ -228,9 +228,10 @@ const canEditInline =
     return defaultData || props?.pos?.options?.hint || title;
   };
   //useEffect is used to increase auto height of text/textInput widget when user using multiline option and enter value in next line
-  // Disabled in inline-editing mode so fields stay static and don't overlap others.
+  // In inline-editing mode, only auto-expand when the value actually contains a newline,
+  // so single-line typing keeps the field static and avoids overlapping other fields.
   useEffect(() => {
-    if (canEditInline) return;
+    if (canEditInline && !(widgetValue && String(widgetValue).includes("\\n"))) return;
     if (!textRef.current) return;
     if (
       (type === "text" || type === textInputWidget) &&
