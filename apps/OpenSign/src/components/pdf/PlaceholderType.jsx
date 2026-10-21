@@ -44,6 +44,9 @@ function PlaceholderType(props) {
     props?.data?.Role !== "prefill" &&
     (props.pos.options?.isReadOnly ||
       props.data?.signerObjId !== props.signerObjId);
+const canEditInline =
+    (canEditInline) ||
+    (props.isNeedSign && iswidgetEnable && !isReadOnly);
   // prefer the latest response value over any default value
   //props?.isPrefillModal is used to handle in create template flow when user use use-template button
   //then prefill details should not be reflect on pdf document it should only show in modal
@@ -294,7 +297,7 @@ function PlaceholderType(props) {
           }}
         >
           {props.pos.options?.values?.map((data, ind) => {
-            const isAuthoring = props.isPlaceholder && !props.isNeedSign;
+            const isAuthoring = canEditInline;
             return (
             <div key={ind} className={isAuthoring ? "" : "select-none-cls pointer-events-none"}>
               <label
@@ -382,17 +385,17 @@ function PlaceholderType(props) {
             fontSize: fontSize,
             color: fontColor,
             background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+            pointerEvents: canEditInline ? "auto" : "none"
           }}
           name="text"
-          readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+          readOnly={!(canEditInline)}
           disabled={props.isNeedSign && isReadOnly}
           cols="50"
           onClick={(e) => {
-            if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+            if (canEditInline) e.stopPropagation();
           }}
           onChange={(e) => {
-            if (props.isPlaceholder && !props.isNeedSign) {
+            if (canEditInline) {
               const val = e.target.value;
               setwidgetValue(val);
               if (props.setXyPosition) {
@@ -448,7 +451,7 @@ function PlaceholderType(props) {
       );
     }
 case "dropdown":
-        return props.isPlaceholder && !props.isNeedSign ? (
+        return canEditInline ? (
           <select
             value={widgetValue?.trim() || ""}
             onChange={(e) => {
@@ -548,16 +551,16 @@ case "name":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none"
             }}
             cols="50"
-            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            readOnly={!(canEditInline)}
             disabled={props.isNeedSign && isReadOnly}
             onClick={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+              if (canEditInline) e.stopPropagation();
             }}
             onChange={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) {
+              if (canEditInline) {
                 const val = e.target.value;
                 setwidgetValue(val);
                 if (props.setXyPosition) {
@@ -597,16 +600,16 @@ case "company":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none"
             }}
             cols="50"
-            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            readOnly={!(canEditInline)}
             disabled={props.isNeedSign && isReadOnly}
             onClick={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+              if (canEditInline) e.stopPropagation();
             }}
             onChange={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) {
+              if (canEditInline) {
                 const val = e.target.value;
                 setwidgetValue(val);
                 if (props.setXyPosition) {
@@ -646,16 +649,16 @@ case "job title":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none"
             }}
             cols="50"
-            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            readOnly={!(canEditInline)}
             disabled={props.isNeedSign && isReadOnly}
             onClick={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+              if (canEditInline) e.stopPropagation();
             }}
             onChange={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) {
+              if (canEditInline) {
                 const val = e.target.value;
                 setwidgetValue(val);
                 if (props.setXyPosition) {
@@ -748,16 +751,16 @@ case "email":
               fontSize: fontSize,
               color: fontColor,
               background: isReadOnly ? props.data?.blockColor : "white",
-              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none"
             }}
             cols="1"
-            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            readOnly={!(canEditInline)}
             disabled={props.isNeedSign && isReadOnly}
             onClick={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+              if (canEditInline) e.stopPropagation();
             }}
             onChange={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) {
+              if (canEditInline) {
                 const val = e.target.value;
                 setwidgetValue(val);
                 if (props.setXyPosition) {
@@ -854,7 +857,7 @@ case textWidget:
           <textarea
             name="text"
             ref={textRef}
-            readOnly={!(props.isPlaceholder && !props.isNeedSign)}
+            readOnly={!(canEditInline)}
             placeholder={t("widgets-name.text")}
             rows={50}
             cols={50}
@@ -866,14 +869,14 @@ case textWidget:
               fontSize: fontSize,
               color: fontColor,
               background: "white",
-              pointerEvents: props.isPlaceholder && !props.isNeedSign ? "auto" : "none"
+              pointerEvents: canEditInline ? "auto" : "none"
             }}
             className="w-full resize-none overflow-hidden text-base-content item-center outline-none"
             onClick={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) e.stopPropagation();
+              if (canEditInline) e.stopPropagation();
             }}
             onChange={(e) => {
-              if (props.isPlaceholder && !props.isNeedSign) {
+              if (canEditInline) {
                 const val = e.target.value;
                 setwidgetValue(val);
                 if (props.setXyPosition) {
