@@ -27,11 +27,24 @@ export default defineConfig(({ mode }) => {
     // ignore
   }
 
+  // Normalize PUBLIC_URL into a base path for Vite
+  let basePath = "/";
+  try {
+    const raw = env.PUBLIC_URL || process.env.PUBLIC_URL;
+    if (raw) {
+      const u = new URL(raw, "http://localhost");
+      basePath = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
+    }
+  } catch (e) {
+    // ignore
+  }
+
   return {
     plugins: [
       react(),
       svgr() // Transform SVGs into React components
     ],
+    base: basePath,
     resolve: { alias: {} }, // Add any necessary aliases here
     define: {
       // Replace process.env.REACT_APP_* with import.meta.env.VITE_*
