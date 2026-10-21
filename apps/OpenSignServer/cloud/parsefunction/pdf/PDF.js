@@ -359,19 +359,31 @@ async function sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, file
 async function processPdf(_resDoc, PdfBuffer, reason) {
   // No CC merge; operate directly on the original PDF
   const pdfDoc = await PDFDocument.load(PdfBuffer, { ignoreEncryption: true });
-  const form = pdfDoc.getForm();
-  // Updates the field appearances to ensure visual changes are reflected.
-  form.updateFieldAppearances();
-  // Flattens the form, converting all form fields into non-editable, static content
-  form.flatten();
-  Placeholder({
-    pdfDoc: pdfDoc,
-    reason: `Digitally signed by ${eSignName} for ${reason}`,
-    location: 'n/a',
-    name: eSignName,
-    contactInfo: eSigncontact,
-    signatureLength: 16000,
-  });
+  try {
+    const form = pdfDoc.getForm();
+    // Updates the field appearances to ensure visual changes are reflected.
+    if (form && typeof form.updateFieldAppearances === 'function') {
+      form.updateFieldAppearances();
+    }
+    // Flattens the form, converting all form fields into non-editable, static content
+    if (form && typeof form.flatten === 'function') {
+      form.flatten();
+    }
+  } catch (e) {
+    console.log('processPdf form flatten skipped:', e?.message);
+  }
+  try {
+    Placeholder({
+      pdfDoc: pdfDoc,
+      reason: `Digitally signed by ${eSignName} for ${reason}`,
+      location: 'n/a',
+      name: eSignName,
+      contactInfo: eSigncontact,
+      signatureLength: 16000,
+    });
+  } catch (e) {
+    console.log('processPdf placeholder skipped:', e?.message);
+  }
   const pdfWithPlaceholderBytes = await pdfDoc.save();
   return Buffer.from(pdfWithPlaceholderBytes);
 }
@@ -464,7 +476,10 @@ async function PDF(req) {
         passphrase = _resDoc?.ExtUserPtr?.TenantId?.PfxFile?.password;
       }
       const pfx = { name: pfxname, passphrase: passphrase };
-      const P12Buffer = Buffer.from(pfxFile, 'base64');
+      if (!pfxFile) {
+      throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'PFX certificate is not configured (PFX_BASE64 missing).');
+    }
+    const P12Buffer = Buffer.from(pfxFile, 'base64');
       fs.writeFileSync(pfxname, P12Buffer);
       const UserPtr = { __type: 'Pointer', className: className, objectId: signUser.objectId };
       const obj = { UserPtr: UserPtr, SignedUrl: '', Activity: auditActivity, ipAddress: userIP };
