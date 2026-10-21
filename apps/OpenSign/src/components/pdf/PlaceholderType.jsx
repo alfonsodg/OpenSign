@@ -45,7 +45,7 @@ function PlaceholderType(props) {
     (props.pos.options?.isReadOnly ||
       props.data?.signerObjId !== props.signerObjId);
 const canEditInline =
-    (canEditInline) ||
+    (props.isPlaceholder && !props.isNeedSign) ||
     (props.isNeedSign && iswidgetEnable && !isReadOnly);
   // prefer the latest response value over any default value
   //props?.isPrefillModal is used to handle in create template flow when user use use-template button
