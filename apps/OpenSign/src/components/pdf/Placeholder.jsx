@@ -1,3 +1,4 @@
+import { UI_FONT } from "../../constant/fonts";
 import { useState, useEffect, forwardRef } from "react";
 import BorderResize from "./BorderResize";
 import { Rnd } from "react-rnd";
@@ -750,7 +751,7 @@ function Placeholder(props) {
             props.setUniqueId && props.setUniqueId(props?.data?.Id);
           }}
           style={{
-            fontFamily: "Arial, sans-serif",
+            fontFamily: UI_FONT,
             position: "absolute",
             left: xPos(props.pos),
             top: yPos(props.pos),

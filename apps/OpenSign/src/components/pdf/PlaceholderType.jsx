@@ -1,3 +1,4 @@
+import { UI_FONT } from "../../constant/fonts";
 import {
   useEffect,
   useState,
@@ -62,7 +63,7 @@ const canEditInline =
   const textWidgetStyle = {
     fontSize: fontSize,
     color: fontColor,
-    fontFamily: "Arial, sans-serif",
+    fontFamily: UI_FONT,
     overflow: "hidden",
     textAlign: "start",
     width: "100%",
@@ -90,7 +91,7 @@ const canEditInline =
       style={{
         fontSize: fontSize,
         color: fontColor,
-        fontFamily: "Arial, sans-serif"
+        fontFamily: UI_FONT
       }}
       className={`${isReadOnly ? `select-none opacity-25` : ``} ${selectWidgetCls} overflow-hidden`}
       onClick={onClick}
@@ -867,7 +868,7 @@ case textWidget:
                   widgetValue
             }
             style={{
-              fontFamily: "Arial, sans-serif",
+              fontFamily: UI_FONT,
               fontSize: fontSize,
               color: fontColor,
               background: "white",

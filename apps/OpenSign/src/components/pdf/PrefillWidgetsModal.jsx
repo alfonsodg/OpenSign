@@ -1,3 +1,4 @@
+import { UI_FONT } from "../../constant/fonts";
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import ModalUi from "../../primitives/ModalUi";
 import {
@@ -222,7 +223,7 @@ function PrefillWidgetModal(props) {
   }, [props?.isPrefillModal, uniqueWidget]);
   const ExampleCustomInput = forwardRef(({ value, onClick }, ref) => (
     <div
-      style={{ fontFamily: "Arial, sans-serif" }}
+      style={{ fontFamily: UI_FONT }}
       className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full"
       onClick={onClick}
       ref={ref}

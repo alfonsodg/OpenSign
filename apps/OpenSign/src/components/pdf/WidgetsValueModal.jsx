@@ -1,3 +1,4 @@
+import { UI_FONT } from "../../constant/fonts";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import ModalUi from "../../primitives/ModalUi";
 import { useTranslation } from "react-i18next";
@@ -1015,7 +1016,7 @@ function WidgetsValueModal(props) {
   const ExampleCustomInput = forwardRef(({ value, onClick }, ref) => (
     <div
       style={{
-        fontFamily: "Arial, sans-serif"
+        fontFamily: UI_FONT
       }}
       // className={`${selectWidgetCls} overflow-hidden`}
       onClick={onClick}
