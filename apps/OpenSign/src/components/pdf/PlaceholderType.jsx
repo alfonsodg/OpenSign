@@ -55,6 +55,7 @@ const canEditInline =
     ? (props.pos?.options?.response ?? props.pos?.options?.defaultValue ?? "")
     : "";
   const [widgetValue, setwidgetValue] = useState();
+  const [inlineError, setInlineError] = useState(false);
   const [selectedCheckbox, setSelectedCheckbox] = useState([]);
   const [imgUrl, setImgUrl] = useState("");
   const [date, setDate] = useState("");
@@ -84,6 +85,35 @@ const canEditInline =
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.pos, widgetData, type]);
+
+  // Inline validation for text fields (PandaDoc parity #34)
+  useEffect(() => {
+    if (!canEditInline) {
+      setInlineError(false);
+      return;
+    }
+    const pattern = props.pos?.options?.validation?.pattern;
+    const vType = props.pos?.options?.validation?.type;
+    if (!widgetValue) {
+      setInlineError(false);
+      return;
+    }
+    let regex = null;
+    if (vType === "email") regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    else if (vType === "number") regex = /^[0-9\s]*$/;
+    else if (pattern) {
+      try {
+        regex = new RegExp(pattern.replace(/^\/|\/$/g, ""));
+      } catch (e) {
+        regex = null;
+      }
+    }
+    if (regex) {
+      setInlineError(!regex.test(String(widgetValue)));
+    } else {
+      setInlineError(false);
+    }
+  }, [widgetValue, canEditInline, props.pos?.options?.validation]);
 
 
   const ExampleCustomInput = forwardRef(({ value, onClick }, ref) => (
@@ -383,7 +413,7 @@ const canEditInline =
           value={
                 widgetValue
           }
-          className={`w-full resize-none overflow-hidden text-base-content item-center outline-none ${isReadOnly ? "select-none" : ""}`}
+          className={`w-full resize-none overflow-hidden text-base-content item-center outline-none ${isReadOnly ? "select-none" : ""} ${inlineError ? "border-2 border-red-500" : ""}`}
           style={{
             fontSize: fontSize,
             color: fontColor,
@@ -549,7 +579,7 @@ case "name":
             value={
                   widgetValue
             }
-            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""} ${inlineError ? "border-2 border-red-500" : ""}`}
             style={{
               fontSize: fontSize,
               color: fontColor,
@@ -598,7 +628,7 @@ case "company":
             value={
                   widgetValue
             }
-            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""} ${inlineError ? "border-2 border-red-500" : ""}`}
             style={{
               fontSize: fontSize,
               color: fontColor,
@@ -647,7 +677,7 @@ case "job title":
             value={
                   widgetValue
             }
-            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""} ${inlineError ? "border-2 border-red-500" : ""}`}
             style={{
               fontSize: fontSize,
               color: fontColor,
@@ -749,7 +779,7 @@ case "email":
             value={
                   widgetValue
             }
-            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""}`}
+            className={`${textWidgetCls} ${isReadOnly ? "select-none" : ""} ${inlineError ? "border-2 border-red-500" : ""}`}
             style={{
               fontSize: fontSize,
               color: fontColor,
