@@ -772,7 +772,7 @@ function PdfRequestFiles(
                 scale
               );
               //get ExistUserPtr object id of user class to get tenantDetails
-              if (!pdfBytes?.error) {
+              if (pdfBytes && !pdfBytes?.error) {
                 const objectId = pdfDetails?.[0]?.ExtUserPtr?.UserId?.objectId;
                 //function for call to embed signature in pdf and get digital signature pdf
                 const resSign = await signPdfFun(

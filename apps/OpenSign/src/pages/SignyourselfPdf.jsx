@@ -709,7 +709,14 @@ function SignYourSelf() {
             );
             //function for call to embed signature in pdf and get digital signature pdf
             if (!pdfBytes?.error) {
-              await signPdfFun(pdfBytes, documentId);
+              await signPdfFun(
+                pdfBytes,
+                documentId,
+                pdfDetails?.[0]?.ExtUserPtr?.UserId?.objectId,
+                pdfDetails?.[0]?.ExtUserPtr?.UserId?.objectId,
+                xyPosition,
+                "Signed"
+              );
             } else {
               setIsUiLoading(false);
               setIsAlert({

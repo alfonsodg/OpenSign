@@ -916,6 +916,9 @@ export const signPdfFun = async (
   activity
 ) => {
   let isCustomCompletionMail = false;
+  if (!base64Url) {
+    return { status: "error", message: "No PDF data to sign." };
+  }
   try {
     //get tenant details
     const tenantDetails = await getTenantDetails(objectId);
@@ -929,7 +932,7 @@ export const signPdfFun = async (
     // below for loop is used to get first signature of user to send if to signpdf
     // for adding it in completion certificate
     let getSignature;
-    for (let item of widgets) {
+    for (let item of (widgets || [])) {
       if (!getSignature) {
         const typeExist = item.pos.some((data) => data?.type);
         if (typeExist) {
