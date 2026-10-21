@@ -70,39 +70,42 @@ export async function getSignedUrl(request) {
 
     if (docId || templateId) {
       try {
+        const query = new Parse.Query(docId ? 'contracts_Document' : 'contracts_Template');
+        query.equalTo('objectId', docId ? docId : templateId);
+        query.include('ExtUserPtr.TenantId');
+        query.notEqualTo('IsArchive', true);
+        const res = await query.first({ useMasterKey: true });
+        if (!res) {
+          throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Document not found.');
+        }
+
+        const _resDoc = res?.toJSON();
+        // Ensure user is authenticated if OTP is required
+        if (_resDoc?.IsEnableOTP) {
+          const isAuth = await isAuthenticated(request?.user);
+          if (!isAuth) {
+            throw new Parse.Error(
+              Parse.Error.INVALID_SESSION_TOKEN,
+              'User is not authenticated.'
+            );
+          }
+        }
+
+        // Bind the requested URL to the fetched document/template to prevent
+        // arbitrary-object presigning (including /files/ token minting).
+        const allowedUrls = [
+          _resDoc?.URL,
+          _resDoc?.SignedUrl,
+          _resDoc?.CertificateUrl,
+        ].filter(Boolean);
+        if (allowedUrls.length && !allowedUrls.includes(url)) {
+          throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'URL not associated with this document.');
+        }
+
         if (url?.includes('/files/')) {
           return presignedlocalUrl(url);
         } else if (useLocal !== 'true') {
-          const query = new Parse.Query(docId ? 'contracts_Document' : 'contracts_Template');
-          query.equalTo('objectId', docId ? docId : templateId);
-          query.include('ExtUserPtr.TenantId');
-          query.notEqualTo('IsArchive', true);
-          const res = await query.first({ useMasterKey: true });
-          if (!res) return url;
-
-          const _resDoc = res?.toJSON();
-          // Ensure user is authenticated if OTP is required
-          if (_resDoc?.IsEnableOTP) {
-            const isAuth = await isAuthenticated(request?.user);
-            if (!isAuth) {
-              throw new Parse.Error(
-                Parse.Error.INVALID_SESSION_TOKEN,
-                'User is not authenticated.'
-              );
-            }
-          }
-
-          // Bind the requested URL to the fetched document/template to prevent
-// arbitrary-object presigning.
-const allowedUrls = [
-  _resDoc?.URL,
-  _resDoc?.SignedUrl,
-  _resDoc?.CertificateUrl,
-].filter(Boolean);
-if (allowedUrls.length && !allowedUrls.includes(url)) {
-  throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'URL not associated with this document.');
-}
-const presignedUrl = await getPresignedUrl(url);
+          const presignedUrl = await getPresignedUrl(url);
           return presignedUrl;
         } else {
           return url;
@@ -117,7 +120,8 @@ const presignedUrl = await getPresignedUrl(url);
         throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User is not authenticated.');
       } else {
         if (url?.includes('/files/')) {
-          return presignedlocalUrl(url);
+          const presignedUrl = await getPresignedUrl(url);
+          return presignedUrl;
         } else if (useLocal !== 'true') {
           const presignedUrl = await getPresignedUrl(url);
           return presignedUrl;
@@ -190,7 +194,7 @@ export async function validateSignedLocalUrl(signedUrl) {
     const secretKey = process.env.MASTER_KEY;
     // Now verify the token (validate signature and expiration automatically)
     const decoded = jwt.verify(token, secretKey);
-    // Check if the file URL in the JWT matches the requested file URL
+    // Check if the file URL in the token matches the requested file URL
     const fileUrl = signedUrl.split('?')[0];
     if (decoded.fileUrl !== fileUrl) {
       throw new Error('Invalid file URL in token.');
