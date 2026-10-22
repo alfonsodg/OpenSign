@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isAdminRole, isOrgAdminRole, ADMIN_ROLES } from '../../../utils/roles.js';
 import { cloudServerUrl, generateId, serverAppId } from '../../../Utils.js';
 import { deleteContactsInBatch, deleteDataFiles, deleteInBatches } from './deleteFileUrl.js';
 import { MAX_ATTEMPTS } from './deleteUtils.js';
@@ -65,7 +66,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
     const tenantId = userResult.get('TenantId')?.id;
     const teamIds = userResult.get('TeamIds') || [];
     const organizationId = userResult.get('OrganizationId')?.id;
-    const isAdmin = userResult?.get('UserRole') === 'contracts_Admin' ? true : false;
+    const isAdmin = isAdminRole(userResult?.get('UserRole'));
     if (isOrgAdmin && isAdmin) {
       const errorMessage = 'Unauthorized.';
       return { code: 400, message: errorMessage };
@@ -276,7 +277,7 @@ export const deleteUserPost = async (req, res) => {
       return res.send(errorMessage);
     }
 
-    if (extUser?.get('UserRole') !== 'contracts_Admin') {
+    if (!isAdminRole(extUser?.get('UserRole'))) {
       const errorMessage =
         'This action is not permitted. Kindly contact your administrator to request account deletion.';
       return res.send(errorMessage);
@@ -284,7 +285,7 @@ export const deleteUserPost = async (req, res) => {
 
     const extUsers = new Parse.Query('contracts_Users');
     extUsers.equalTo('TenantId', extUser?.get('TenantId'));
-    extUsers.notEqualTo('UserRole', 'contracts_Admin');
+    extUsers.notContainedIn('UserRole', ADMIN_ROLES);
     const isTeamUsers = await extUsers.first({ useMasterKey: true });
     if (isTeamUsers) {
       const errorMessage = `To delete this account, start by removing all team users associated with it. Once all users are removed, you'll be able to permanently delete the account.`;
@@ -388,12 +389,8 @@ export const deleteUserByAdmin = async (req, res) => {
       const errorMessage = 'User not found.';
       return res.status(400).json({ message: errorMessage });
     }
-    const isAdmin =
-      extUser?.get('UserRole') === 'contracts_Admin' ||
-      extUser?.get('UserRole') === 'contracts_OrgAdmin'
-        ? true
-        : false;
-    const isOrgAdmin = extUser?.get('UserRole') === 'contracts_OrgAdmin';
+    const isAdmin = isAdminRole(extUser?.get('UserRole'));
+    const isOrgAdmin = isOrgAdminRole(extUser?.get('UserRole'));
     const tenantId = extUser?.get('TenantId');
     const orgPtr = isOrgAdmin && extUser?.get('OrganizationId');
     if (!isAdmin) {
