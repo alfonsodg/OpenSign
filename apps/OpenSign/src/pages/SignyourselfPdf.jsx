@@ -1037,6 +1037,7 @@ function SignYourSelf() {
     defaultValue,
     isHideLabel,
     layout,
+    isMultiSelect,
   ) => {
     const widgetPageNumber = currWidgetsDetails?.pageNumber || pageNumber;
     const getPageNumer = xyPosition.filter(
@@ -1068,6 +1069,7 @@ function SignYourSelf() {
                 ...position.options,
                 name: dropdownName,
                 values: dropdownOptions,
+                isMultiSelect: isMultiSelect || false,
                 ...widgetLayout,
                 isReadOnly: isReadOnly,
                 isHideLabel: isHideLabel || false,

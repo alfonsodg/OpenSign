@@ -2420,10 +2420,20 @@ export const embedWidgetsToDoc = async (
           const dropdownRandomId = "dropdown" + randomId();
           const dropdown = form.createDropdown(dropdownRandomId);
           dropdown.addOptions(position?.options?.values);
-          if (position?.options?.response) {
-            dropdown.select(position.options?.response);
-          } else if (position?.options?.defaultValue) {
-            dropdown.select(position?.options?.defaultValue);
+          // A multi-select field stores an array, so every selected value has
+          // to be applied at once.
+          if (position?.options?.isMultiSelect && dropdown.enableMultiselect) {
+            dropdown.enableMultiselect();
+          }
+          const toValues = (value) => {
+            if (Array.isArray(value)) return value.filter((v) => v != null);
+            return value ? [value] : [];
+          };
+          const selectedValues = toValues(position?.options?.response).length
+            ? toValues(position?.options?.response)
+            : toValues(position?.options?.defaultValue);
+          if (selectedValues.length > 0) {
+            dropdown.select(...selectedValues.map(String));
           }
           // Define the default appearance string
           // Example format: `/FontName FontSize Tf 0 g` where:

@@ -15,6 +15,7 @@ function DropdownWidgetOption(props) {
   const [dropdownName, setDropdownName] = useState();
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [isHideLabel, setIsHideLabel] = useState(false);
+  const [isMultiSelect, setIsMultiSelect] = useState(false);
   const [status, setStatus] = useState("required");
   const [defaultValue, setDefaultValue] = useState("");
   const [defaultCheckbox, setDefaultCheckbox] = useState([]);
@@ -34,6 +35,7 @@ function DropdownWidgetOption(props) {
     setDefaultCheckbox([]);
     setDefaultValue("");
     setLayout("vertical");
+    setIsMultiSelect(false);
   };
   useEffect(() => {
     if (
@@ -54,6 +56,7 @@ function DropdownWidgetOption(props) {
       setDefaultValue(props.currWidgetsDetails?.options?.defaultValue || "");
       setDefaultCheckbox(props.currWidgetsDetails?.options?.defaultValue || []);
       setLayout(props.currWidgetsDetails?.options?.layout || "vertical");
+      setIsMultiSelect(!!props.currWidgetsDetails?.options?.isMultiSelect);
     } else {
       setStatus("required");
       resetState();
@@ -152,6 +155,7 @@ function DropdownWidgetOption(props) {
       defaultData,
       isHideLabel,
       WidgetLayout,
+      isMultiSelect,
     );
     resetState();
   };
@@ -369,6 +373,23 @@ function DropdownWidgetOption(props) {
                     </label>
                   </div>
                 )}
+              </div>
+            )}
+            {props.type === "dropdown" && (
+              <div className="flex flex-row gap-[5px] items-center mt-[0.5rem] mb-[10px]">
+                <input
+                  id="dropdown-multiselect"
+                  className="op-checkbox op-checkbox-xs rounded-[1px]"
+                  type="checkbox"
+                  checked={isMultiSelect}
+                  onChange={(e) => setIsMultiSelect(e.target.checked)}
+                />
+                <label
+                  className="text-[13px] font-500 mb-0 cursor-pointer"
+                  htmlFor="dropdown-multiselect"
+                >
+                  {t("allow-multiple-selection")}
+                </label>
               </div>
             )}
             {["checkbox", radioButtonWidget].includes(props.type) && (

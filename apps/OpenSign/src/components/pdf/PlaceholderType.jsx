@@ -529,10 +529,83 @@ const canEditInline =
         />
       );
     }
-case "dropdown":
+case "dropdown": {
+        // Saved values can be arrays; options can be objects with a name.
+        const normalizeOption = (option) => {
+          if (option == null) return "";
+          if (typeof option === "object") {
+            return String(option.name ?? option.value ?? "");
+          }
+          return String(option);
+        };
+        const dropdownValue = Array.isArray(widgetData)
+          ? widgetData.map(normalizeOption).join(", ")
+          : normalizeOption(widgetData);
+        const selectedValue = Array.isArray(widgetValue)
+          ? widgetValue.map(normalizeOption)
+          : widgetValue
+            ? [normalizeOption(widgetValue)]
+            : [];
+        if (canEditInline && props.pos?.options?.isMultiSelect) {
+          const persist = (next) => {
+            setwidgetValue(next);
+            if (props.setXyPosition) {
+              onChangeInput(
+                next,
+                props.pos,
+                props.xyPosition,
+                props.index,
+                props.setXyPosition,
+                props.data?.Id || props.uniqueId,
+                false,
+                null,
+                props.pos?.options?.fontSize || 12,
+                props.pos?.options?.fontColor || "black",
+                null,
+                null
+              );
+            }
+          };
+          return (
+            <div
+              className="flex h-full w-full flex-col overflow-auto"
+              style={{ fontSize: fontSize, color: fontColor }}
+            >
+              {(props.pos?.options?.values || []).map((data, ind) => {
+                const optionLabel = normalizeOption(data);
+                return (
+                  <label
+                    key={ind}
+                    className="mb-0 flex items-center"
+                    style={{ gap: `${Math.max(fontSize * 0.2, 2)}px` }}
+                  >
+                    <input
+                      type="checkbox"
+                      className="op-checkbox rounded-[1px]"
+                      style={{
+                        width: fontSize,
+                        height: fontSize,
+                        flexShrink: 0
+                      }}
+                      checked={selectedValue.includes(optionLabel)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...selectedValue, optionLabel]
+                          : selectedValue.filter((val) => val !== optionLabel);
+                        persist(next);
+                      }}
+                    />
+                    <span className="leading-none">{optionLabel}</span>
+                  </label>
+                );
+              })}
+            </div>
+          );
+        }
         return canEditInline ? (
           <select
-            value={widgetValue?.trim() || ""}
+            value={selectedValue.join(", ")}
             onChange={(e) => {
               const val = e.target.value;
               setwidgetValue(val);
@@ -561,8 +634,8 @@ case "dropdown":
               {t("choose-one")}
             </option>
             {(props.pos?.options?.values || []).map((data, ind) => (
-              <option key={ind} value={data?.trim()}>
-                {data?.trim()}
+              <option key={ind} value={normalizeOption(data)}>
+                {normalizeOption(data)}
               </option>
             ))}
           </select>
@@ -571,10 +644,11 @@ case "dropdown":
             style={textWidgetStyle}
             className="select-none-cls flex justify-between items-center"
           >
-            {widgetData?.trim() || t("choose-one")}
+            {dropdownValue || t("choose-one")}
             <i className="fa-light fa-circle-chevron-down mr-1 "></i>
           </div>
         );
+      }
     case "initials": {
       const iniRotation = props.pos.options?.rotation;
       const iniIsSwapped = [90, 270].includes(iniRotation);

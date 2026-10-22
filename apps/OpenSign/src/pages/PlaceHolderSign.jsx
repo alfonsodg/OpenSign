@@ -1400,6 +1400,7 @@ function PlaceHolderSign() {
     defaultValue,
     isHideLabel,
     layout,
+    isMultiSelect,
   ) => {
     const widgetPageNumber = currWidgetsDetails?.pageNumber || pageNumber;
     const isPrefill = signerPos.some(
@@ -1496,6 +1497,7 @@ function PlaceHolderSign() {
                   name: dropdownName,
                   status: status,
                   values: dropdownOptions,
+                  isMultiSelect: isMultiSelect || false,
                   defaultValue: defaultValue,
                   fontSize: textSize || 12,
                   fontColor: textColor || "black",
