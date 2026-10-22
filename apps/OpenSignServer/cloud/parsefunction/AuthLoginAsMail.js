@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { cloudServerUrl, serverAppId } from '../../Utils.js';
+
+const MAX_OTP_ATTEMPTS = 5;
 async function AuthLoginAsMail(request) {
   try {
     //function for login user using user objectId without touching user's password
@@ -20,12 +22,28 @@ async function AuthLoginAsMail(request) {
     if (res !== undefined) {
       let resOtp = res.get('OTP');
       const expiresAt = res.get('ExpiresAt');
-      if (expiresAt && new Date(expiresAt) < new Date()) {
+      // Records without a usable expiry are legacy and must not be accepted.
+      if (!expiresAt || new Date(expiresAt) <= new Date()) {
+        return 'Invalid Otp';
+      }
+
+      if (resOtp !== otp) {
+        // Cap the number of wrong attempts, otherwise a 4-digit code can be
+        // brute forced inside its validity window.
+        const attempts = (res.get('Attempts') || 0) + 1;
+        if (attempts >= MAX_OTP_ATTEMPTS) {
+          await res.destroy({ useMasterKey: true });
+        } else {
+          res.set('Attempts', attempts);
+          await res.save(null, { useMasterKey: true });
+        }
         return 'Invalid Otp';
       }
 
       if (resOtp === otp) {
-        try { await res.destroy({ useMasterKey: true }); } catch (e) { /* ignore */ }
+        // Consume the code before issuing a session; if the delete fails the
+        // code would stay reusable, so the authentication must abort.
+        await res.destroy({ useMasterKey: true });
         var result = await getToken(request);
         if (result && !result?.emailVerified) {
           const userQuery = new Parse.Query(Parse.User);

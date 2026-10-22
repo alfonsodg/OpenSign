@@ -1,4 +1,10 @@
+import { randomInt } from 'node:crypto';
 import { appName, smtpenable, updateMailCount } from '../../Utils.js';
+
+// A 4-digit code with no rate limit is brute-forceable, so the send is throttled
+// and the verification attempts are capped.
+const OTP_COOLDOWN_MS = 60 * 1000;
+const OTP_TTL_MS = 10 * 60 * 1000;
 async function getDocument(docId) {
   try {
     const query = new Parse.Query('contracts_Document');
@@ -19,12 +25,21 @@ async function getDocument(docId) {
 }
 async function sendMailOTPv1(request) {
   try {
-    let code = Math.floor(1000 + Math.random() * 9000);
+    // Cryptographically secure and unbiased.
+    let code = randomInt(1000, 10000);
     let email = request.params.email;
     let TenantId = request.params.TenantId ? request.params.TenantId : undefined;
     const AppName = appName;
 
     if (email) {
+      const existingOtpQuery = new Parse.Query('defaultdata_Otp');
+      existingOtpQuery.equalTo('Email', email);
+      const existingOtp = await existingOtpQuery.first({ useMasterKey: true });
+      const lastSentAt = existingOtp?.get('UpdatedAt') || existingOtp?.get('createdAt');
+      if (lastSentAt && Date.now() - new Date(lastSentAt).getTime() < OTP_COOLDOWN_MS) {
+        // Do not let the endpoint be used to flood a mailbox.
+        return 'Please wait before requesting a new code';
+      }
       const recipient = request.params.email;
       const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
       try {
@@ -58,7 +73,8 @@ async function sendMailOTPv1(request) {
           useMasterKey: true,
         });
         updateOtp.set('OTP', code);
-        updateOtp.set('ExpiresAt', new Date(Date.now() + 10 * 60 * 1000));
+        updateOtp.set('Attempts', 0);
+        updateOtp.set('ExpiresAt', new Date(Date.now() + OTP_TTL_MS));
         updateOtp.save(null, { useMasterKey: true });
         //   console.log("update otp Res in tempSendOtp ", updateRes);
       } else {
@@ -67,7 +83,8 @@ async function sendMailOTPv1(request) {
         newOtpQuery.set('OTP', code);
         newOtpQuery.set('Email', email);
         newOtpQuery.set('TenantId', TenantId);
-        newOtpQuery.set('ExpiresAt', new Date(Date.now() + 10 * 60 * 1000));
+        newOtpQuery.set('Attempts', 0);
+        newOtpQuery.set('ExpiresAt', new Date(Date.now() + OTP_TTL_MS));
         await newOtpQuery.save(null, { useMasterKey: true });
         //   console.log("new otp Res in tempSendOtp ", newRes);
       }

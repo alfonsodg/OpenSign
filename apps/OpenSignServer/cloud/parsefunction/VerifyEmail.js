@@ -16,6 +16,14 @@ export default async function VerifyEmail(request) {
       checkOtp.equalTo('OTP', otp);
 
       const res = await checkOtp.first({ useMasterKey: true });
+      // A missing or expired code is never accepted, and a wrong code counts
+      // as an attempt so the 4/6-digit space cannot be brute forced.
+      const otpExpiresAt = res?.get('ExpiresAt');
+      if (res && (!otpExpiresAt || new Date(otpExpiresAt) <= new Date())) {
+        const error = new Error('OTP is invalid.');
+        error.code = 400;
+        throw error;
+      }
       if (res) {
         // Fetch the user by their objectId
         const userQuery = new Parse.Query(Parse.User);
