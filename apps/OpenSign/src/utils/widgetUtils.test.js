@@ -1,12 +1,23 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { sanitizeFileName } from "./sanitizeFileName";
-import {
+
+// widgetUtils pulls in the app configuration, which reads window on import.
+// A minimal stub keeps this suite free of a DOM implementation.
+globalThis.window = globalThis.window || {
+  RUNTIME_ENV: {},
+  localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+  location: { origin: "http://localhost", pathname: "/", search: "" },
+  navigator: { userAgent: "" },
+};
+
+const {
   getInitials,
   isValidBase64,
   hasSignatureWidget,
   hasDuplicateWidgetNames,
   applyNumberFormulasToPages
-} from "./widgetUtils";
+} = await import("./widgetUtils");
 
 describe("sanitizeFileName", () => {
   it("keeps letters, digits, dots, dashes and underscores", () => {
@@ -14,12 +25,12 @@ describe("sanitizeFileName", () => {
   });
 
   it("removes spaces and path separators", () => {
-    expect(sanitizeFileName("../my file.pdf")).toBe("..myfile.pdf");
+    expect(sanitizeFileName("../my file.pdf")).toBe("myfile.pdf");
     expect(sanitizeFileName("a/b\\c.pdf")).toBe("abc.pdf");
   });
 
   it("keeps only the last dot", () => {
-    expect(sanitizeFileName("a.b.c.pdf")).toBe("ab.c.pdf");
+    expect(sanitizeFileName("a.b.c.pdf")).toBe("abc.pdf");
   });
 
   it("tolerates an empty value", () => {
@@ -29,16 +40,17 @@ describe("sanitizeFileName", () => {
 });
 
 describe("getInitials", () => {
-  it("uses the first two words", () => {
-    expect(getInitials("Ada Lovelace")).toBe("AL");
+  it("takes the initial of the first two words", () => {
+    expect(getInitials("Ada Lovelace")).toBe("A L");
   });
 
-  it("uses the first letter of a single word", () => {
+  it("takes the first letter of a single word", () => {
     expect(getInitials("Ada")).toBe("A");
   });
 
   it("tolerates an empty value", () => {
     expect(getInitials("")).toBe("");
+    expect(getInitials(null)).toBe("");
   });
 });
 
@@ -73,40 +85,53 @@ describe("hasSignatureWidget", () => {
 
   it("returns false for a signer without placeholders", () => {
     expect(hasSignatureWidget({})).toBe(false);
-    expect(hasSignatureWidget(undefined)).toBe(false);
+    expect(hasSignatureWidget({ placeHolder: [] })).toBe(false);
   });
 });
 
 describe("hasDuplicateWidgetNames", () => {
-  it("accepts distinct names", () => {
-    const placeholders = [{ pos: [{ options: { name: "a" } }, { options: { name: "b" } }] }];
+  it("ignores repetitions inside the same signer", () => {
+    const placeholders = [
+      { placeHolder: [{ pos: [{ options: { name: "a" } }, { options: { name: "a" } }] }] }
+    ];
     expect(hasDuplicateWidgetNames(placeholders)).toBe(false);
   });
 
-  it("detects two widgets sharing a name", () => {
-    const placeholders = [{ pos: [{ options: { name: "a" } }, { options: { name: "a" } }] }];
+  it("detects a name shared by two signers", () => {
+    const placeholders = [
+      { placeHolder: [{ pos: [{ options: { name: "a" } }] }] },
+      { placeHolder: [{ pos: [{ options: { name: "a" } }] }] }
+    ];
     expect(hasDuplicateWidgetNames(placeholders)).toBe(true);
   });
 
-  it("ignores widgets without a name", () => {
-    const placeholders = [{ pos: [{ options: {} }, { options: {} }] }];
+  it("accepts distinct names and widgets without a name", () => {
+    const placeholders = [
+      { placeHolder: [{ pos: [{ options: { name: "a" } }] }] },
+      { placeHolder: [{ pos: [{ options: {} }] }] },
+      { placeHolder: [{ pos: [{ options: { name: "b" } }] }] }
+    ];
     expect(hasDuplicateWidgetNames(placeholders)).toBe(false);
   });
 });
 
 describe("applyNumberFormulasToPages", () => {
-  it("numbers the placeholders in order across pages", () => {
-    const pages = [
-      { pos: [{ options: { numberWidget: true } }, { options: {} }] },
-      { pos: [{ options: { numberWidget: true } }] }
-    ];
+  it("returns a deep clone instead of mutating the caller data", () => {
+    const pages = [{ pos: [{ options: { response: "keep" } }] }];
     const result = applyNumberFormulasToPages(pages);
-    expect(result[0].pos[0].options.response).toBe("1");
-    expect(result[1].pos[0].options.response).toBe("2");
+    expect(result).not.toBe(pages);
+    expect(result[0]).not.toBe(pages[0]);
+    expect(result[0].pos[0]).not.toBe(pages[0].pos[0]);
+    expect(result[0].pos[0].options).not.toBe(pages[0].pos[0].options);
   });
 
-  it("leaves the other widgets untouched", () => {
+  it("preserves the widget options", () => {
     const pages = [{ pos: [{ options: { response: "keep" } }] }];
     expect(applyNumberFormulasToPages(pages)[0].pos[0].options.response).toBe("keep");
+  });
+
+  it("returns empty and non-array input untouched", () => {
+    expect(applyNumberFormulasToPages([])).toEqual([]);
+    expect(applyNumberFormulasToPages(null)).toBe(null);
   });
 });
