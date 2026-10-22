@@ -61,6 +61,8 @@ describe('admin roles', () => {
   it('keeps the legacy names in the lists used by the queries', () => {
     expect(ADMIN_ROLES).toContain('contracts_Admin');
     expect(ORG_ADMIN_ROLES).toContain('contracts_OrgAdmin');
-    expect(ALL_ADMIN_ROLES).toHaveLength(ADMIN_ROLES.length + ORG_ADMIN_ROLES.length);
+    expect(ALL_ADMIN_ROLES.length).toBe(
+      ADMIN_ROLES.length + ORG_ADMIN_ROLES.length
+    );
   });
 });
