@@ -506,34 +506,88 @@ function PrefillWidgetModal(props) {
             />
           </>
         );
-      case "dropdown":
+      case "dropdown": {
+        if (position?.options?.isMultiSelect) {
+          const optionsList = getOptionsList(position?.options?.values);
+          const currentValues = Array.isArray(position?.options?.response)
+            ? position?.options?.response.map(normalizeOption)
+            : position?.options?.response
+              ? [normalizeOption(position?.options?.response)]
+              : [];
+          const persist = (next) => {
+            setFormData((prev) => ({ ...prev, [position.key]: next }));
+            setIsShowValidation(false);
+            props.setXyPosition?.((prev) =>
+              prev.map((item) => ({
+                ...item,
+                placeHolder: item.placeHolder.map((ph) => ({
+                  ...ph,
+                  pos: ph.pos.map((posItem) =>
+                    posItem.key === position.key
+                      ? { ...posItem, options: { ...posItem.options, response: next } }
+                      : posItem
+                  )
+                }))
+              }))
+            );
+            props.handleSaveWidgetsOptions(
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              next,
+              null,
+              null
+            );
+          };
+          return (
+            <div className="flex flex-col gap-1 max-h-40 overflow-auto border border-base-300 rounded p-2">
+              {optionsList.length === 0 ? (
+                <div className="text-xs text-base-content/60">{t("no-options")}</div>
+              ) : (
+                optionsList.map((data, ind) => (
+                  <label key={ind} className="flex items-center gap-2 text-xs text-base-content cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="op-checkbox op-checkbox-xs rounded-[1px]"
+                      checked={currentValues.includes(data)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...currentValues, data]
+                          : currentValues.filter((v) => v !== data);
+                        persist(next);
+                      }}
+                    />
+                    <span>{data}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          );
+        }
         return (
-          <>
-            <span
-              className={`${widgetLabelCss(position?.options?.status === "required")} ${widgetTitle}`}
-            >
-              {position.options?.name}
-            </span>
-            <select
-              className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content text-base-content w-full"
-              id="myDropdown"
-              value={
-                position?.options?.response || position?.options?.defaultValue
-              }
-              onChange={(e) => handleWidgetDetails(position, e.target.value)}
-            >
-              {/* Default/Title option */}
-              <option value="" disabled hidden>
-                {t("choose-one")}
+          <select
+            className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content text-base-content w-full text-xs"
+            id="myDropdown"
+            value={position?.options?.response || ""}
+            onChange={(e) => handleOnchangeTextBox(e, "dropdown")}
+          >
+            <option value="" disabled hidden>
+              {t("choose-one")}
+            </option>
+            {position?.options?.values?.map((data, ind) => (
+              <option key={ind} value={data?.trim()}>
+                {data?.trim()}
               </option>
-              {position?.options?.values?.map((data, ind) => (
-                <option key={ind} value={data}>
-                  {data}
-                </option>
-              ))}
-            </select>
-          </>
+            ))}
+          </select>
         );
+      }
+
       case "date":
         return (
           <>

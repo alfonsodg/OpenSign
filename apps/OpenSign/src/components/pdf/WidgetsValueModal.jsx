@@ -1032,6 +1032,17 @@ function WidgetsValueModal(props) {
     setWidgetValue(date);
     setStartDate(date);
   };
+    const normalizeOption = (option) => {
+    if (option == null) return "";
+    if (typeof option === "object") {
+      return String(option.name ?? option.value ?? "");
+    }
+    return String(option);
+  };
+  const getOptionsList = () => {
+    const opts = currWidgetsDetails?.options?.values || [];
+    return opts.map(normalizeOption).filter((o) => o !== "");
+  };
   const handleOnchangeTextBox = (e) => {
     // hide any prior validation error while typing
     setIsShowValidation(false);
@@ -1446,7 +1457,59 @@ function WidgetsValueModal(props) {
             count={currWidgetsDetails?.options?.cellCount || 0}
           />
         );
-      case "dropdown":
+      case "dropdown": {
+        if (currWidgetsDetails?.options?.isMultiSelect) {
+          const optionsList = getOptionsList();
+          const currentValues = Array.isArray(widgetValue)
+            ? widgetValue.map(normalizeOption)
+            : widgetValue
+              ? [normalizeOption(widgetValue)]
+              : [];
+          const persist = (next) => {
+            setIsShowValidation(false);
+            setWidgetValue(next);
+            props.setCurrWidgetsDetails?.((prev) =>
+              prev && prev.key === currWidgetsDetails?.key
+                ? { ...prev, options: { ...prev.options, response: next } }
+                : prev
+            );
+            onChangeInput(
+              next,
+              currWidgetsDetails,
+              xyPosition,
+              props.index,
+              setXyPosition,
+              uniqueId
+            );
+          };
+          return (
+            <div className="flex flex-col gap-1 max-h-40 overflow-auto border border-base-300 rounded p-2">
+              {optionsList.length === 0 ? (
+                <div className="text-xs text-base-content/60">{t("no-options")}</div>
+              ) : (
+                optionsList.map((data, ind) => (
+                  <label
+                    key={ind}
+                    className="flex items-center gap-2 text-xs text-base-content cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      className="op-checkbox op-checkbox-xs rounded-[1px]"
+                      checked={currentValues.includes(data)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...currentValues, data]
+                          : currentValues.filter((v) => v !== data);
+                        persist(next);
+                      }}
+                    />
+                    <span>{data}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          );
+        }
         return (
           <select
             className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content text-base-content w-full text-xs"
@@ -1466,6 +1529,8 @@ function WidgetsValueModal(props) {
             ))}
           </select>
         );
+      }
+
       case "name":
         return (
           <input
@@ -1965,26 +2030,42 @@ function WidgetsValueModal(props) {
     }
     let isResponse = true;
     //condition to check all required widgets have response or not then show finish button
+    const isEmptyVal = (val) => {
+      if (val === null || val === undefined) return true;
+      if (typeof val === "string" && val.trim() === "") return true;
+      if (Array.isArray(val)) {
+        if (val.length === 0) return true;
+        const filtered = val.filter((v) => {
+          if (v === null || v === undefined) return false;
+          if (typeof v === "object") {
+            const o = v?.name ?? v?.value ?? v;
+            if (typeof o === "string") return o.trim() !== "";
+            return true;
+          }
+          if (typeof v === "string") return v.trim() !== "";
+          return true;
+        });
+        return filtered.length === 0;
+      }
+      return false;
+    };
+
     for (const data of editableWidgets) {
       // Use the dynamic required status (respects require/optional logic actions).
-      const effectiveStatus =
-        data.options?.status ||
-        "required";
+      const effectiveStatus = data.options?.status || "required";
       if (data?.type === "checkbox") {
         const minCount = data.options?.validation?.minRequiredCount;
         const parseMin = minCount && parseInt(minCount);
         const hasNoResponse =
-          (!Array.isArray(data?.options?.response) ||
-            data.options.response.length === 0) &&
-          (!Array.isArray(data?.options?.defaultValue) ||
-            data.options.defaultValue.length === 0);
+          isEmptyVal(data?.options?.response) &&
+          isEmptyVal(data?.options?.defaultValue);
         if (parseMin > 0 && hasNoResponse) {
           isResponse = false;
           break;
         }
       } else if (
-        !data.options.response &&
-        !data?.options?.defaultValue &&
+        isEmptyVal(data?.options?.response) &&
+        isEmptyVal(data?.options?.defaultValue) &&
         effectiveStatus === "required"
       ) {
         isResponse = false;
