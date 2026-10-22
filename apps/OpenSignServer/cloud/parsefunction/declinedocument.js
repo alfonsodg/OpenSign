@@ -1,5 +1,6 @@
 import { appName } from '../../Utils.js';
 import sendSystemMail from './sendSystemMail.js';
+import { logger } from '../../utils/logger.js';
 
 async function sendDeclineMail(doc, publicUrl, userId, reason) {
   try {
@@ -40,7 +41,7 @@ async function sendDeclineMail(doc, publicUrl, userId, reason) {
     };
     await sendSystemMail({ params });
   } catch (err) {
-    console.log('err in sendnotifymail', err);
+    logger.info('err in sendnotifymail', err);
   }
 }
 export default async function declinedocument(request) {
@@ -89,7 +90,7 @@ export default async function declinedocument(request) {
       throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Document not found.');
     }
   } catch (err) {
-    console.log('err while decling doc', err);
+    logger.info('err while decling doc', err);
     throw err;
   }
 }

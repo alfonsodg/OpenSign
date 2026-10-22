@@ -1,4 +1,5 @@
 import { ALL_ADMIN_ROLES } from '../../utils/roles.js';
+import { logger } from '../../utils/logger.js';
 
 // `CheckAdminExist` is used to check is admin with org exist or not in db
 export default async function CheckAdminExist() {
@@ -14,7 +15,7 @@ export default async function CheckAdminExist() {
       return 'not_exist';
     }
   } catch (err) {
-    console.log('err in isAdminExist', err);
+    logger.info('err in isAdminExist', err);
     const code = err?.code || 400;
     const msg = err?.message || 'something went wrong.';
     throw new Parse.Error(code, msg);

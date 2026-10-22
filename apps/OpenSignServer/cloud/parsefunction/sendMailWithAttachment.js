@@ -5,13 +5,14 @@ import Mailgun from 'mailgun.js';
 import { appName, smtpenable, smtpsecure, updateMailCount, stripHtml } from '../../Utils.js';
 import { createTransport } from 'nodemailer';
 import axios from 'axios';
+import { logger } from '../../utils/logger.js';
 
 function safeUnlink(filePath, label = 'file') {
   if (fs.existsSync(filePath)) {
     try {
       fs.unlinkSync(filePath);
     } catch (err) {
-      console.log(`sendMailWithAttachment unlink ${label} error`);
+      logger.info(`sendMailWithAttachment unlink ${label} error`);
     }
   }
 }
@@ -71,16 +72,16 @@ https
                    response.pipe(Pdf);
                    Pdf.on('finish', () => resolve('success'));
                    Pdf.on('error', e => {
-                     console.error(`error: ${e.message}`);
+                     logger.error(`error: ${e.message}`);
                      resolve('error');
                    });
                    response.on('error', e => {
-                     console.error(`error: ${e.message}`);
+                     logger.error(`error: ${e.message}`);
                      resolve('error');
                    });
                  })
                 .on('error', e => {
-                  console.error(`error: ${e.message}`);
+                  logger.error(`error: ${e.message}`);
                   resolve('error');
                 });
             } else {
@@ -98,7 +99,7 @@ https
                   Pdf.on('error', () => resolve('error'));
                 })
                 .catch(e => {
-                  console.log('error in localurl', e.message);
+                  logger.info('error in localurl', e.message);
                   resolve('error');
                 });
             }
@@ -137,7 +138,7 @@ https
                 certificateBuffer = fs.readFileSync(certificatePath);
               }
             } catch (err) {
-              console.log('sendMailWithAttachment read certificate error', err);
+              logger.info('sendMailWithAttachment read certificate error', err);
             }
           }
           if (certificateBuffer && certificateBuffer.length > 0) {
@@ -172,7 +173,7 @@ https
           ];
           if (transporterSMTP) {
             const res = await transporterSMTP.sendMail(messageParams);
-            console.log('smtp transporter res: ', res?.response);
+            logger.info('smtp transporter res: ', res?.response);
             if (!res.err) {
               if (extUserId) {
                 await updateMailCount(extUserId);
@@ -184,7 +185,7 @@ https
           } else {
             if (mailgunApiKey) {
               const res = await mailgunClient.messages.create(mailgunDomain, messageParams);
-              console.log('mailgun res: ', res?.status);
+              logger.info('mailgun res: ', res?.status);
               if (res.status === 200) {
                 if (extUserId) {
                   await updateMailCount(extUserId);
@@ -199,7 +200,7 @@ https
           }
         }
       } catch (err) {
-        console.log(`sendMailWithAttachment error: ${err}`);
+        logger.info(`sendMailWithAttachment error: ${err}`);
         safeUnlink(testPdf, 'testPdf');
         if (err) return { status: 'error' };
       }
@@ -221,7 +222,7 @@ https
 
       if (transporterSMTP) {
         const res = await transporterSMTP.sendMail(messageParams);
-        console.log('smtp transporter res: ', res?.response);
+        logger.info('smtp transporter res: ', res?.response);
         if (!res.err) {
           if (extUserId) {
             await updateMailCount(extUserId);
@@ -231,7 +232,7 @@ https
       } else {
         if (mailgunApiKey) {
           const res = await mailgunClient.messages.create(mailgunDomain, messageParams);
-          console.log('mailgun res: ', res?.status);
+          logger.info('mailgun res: ', res?.status);
           if (res.status === 200) {
             if (extUserId) {
               await updateMailCount(extUserId);
@@ -244,7 +245,7 @@ https
       }
     }
   } catch (err) {
-    console.log(`sendMailWithAttachment Error: ${err}`);
+    logger.info(`sendMailWithAttachment Error: ${err}`);
     if (err) {
       return { status: 'error' };
     }

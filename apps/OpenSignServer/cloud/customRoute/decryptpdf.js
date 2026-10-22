@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import axios from 'axios';
 import Coherentpdf from 'coherentpdf';
 import { cloudServerUrl, serverAppId } from '../../Utils.js';
+import { logger } from '../../utils/logger.js';
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -75,7 +76,7 @@ export default async function decryptpdf(req, res) {
     safeUnlink(inputPath);
   } catch (err) {
     safeUnlink(inputPath);
-    console.log('Error in decrypt file: ', err);
+    logger.info('Error in decrypt file: ', err);
     let code = err?.code ? err.code : 400;
     let message = err?.[2]?.c ? err[2].c : 'Something went wrong.';
     if (err?.[2]?.c?.includes('Bad password') || err?.[2]?.c?.includes('decrypt_pdf_inner')) {

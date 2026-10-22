@@ -1,4 +1,5 @@
 import { appName, smtpenable } from '../../Utils.js';
+import { logger } from '../../utils/logger.js';
 
 export const errHtml = err => {
   return `<html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8" /><title>Reset Password</title></head>
@@ -96,7 +97,7 @@ const sendDeleteUserMail = async req => {
     });
     return 'mail sent.';
   } catch (err) {
-    console.log('Err in sending delete user email ', err);
+    logger.info('Err in sending delete user email ', err);
     throw new Parse.Error(Parse.Error.SCRIPT_FAILED, err.message);
   }
 };

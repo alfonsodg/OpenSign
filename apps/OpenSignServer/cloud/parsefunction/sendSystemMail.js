@@ -2,6 +2,7 @@ import formData from 'form-data';
 import Mailgun from 'mailgun.js';
 import { appName, smtpenable, smtpsecure, updateMailCount, stripHtml } from '../../Utils.js';
 import { createTransport } from 'nodemailer';
+import { logger } from '../../utils/logger.js';
 async function sendMailProvider(req) {
   const app = appName;
   const extUserId = req.params?.extUserId || '';
@@ -54,7 +55,7 @@ async function sendMailProvider(req) {
 
     if (transporterSMTP) {
       const res = await transporterSMTP.sendMail(messageParams);
-      console.log('smtp transporter res: ', res?.response);
+      logger.info('smtp transporter res: ', res?.response);
       if (!res.err) {
         if (extUserId) {
           await updateMailCount(extUserId);
@@ -64,7 +65,7 @@ async function sendMailProvider(req) {
     } else {
       if (mailgunApiKey) {
         const res = await mailgunClient.messages.create(mailgunDomain, messageParams);
-        console.log('mailgun res: ', res?.status);
+        logger.info('mailgun res: ', res?.status);
         if (res.status === 200) {
           if (extUserId) {
             await updateMailCount(extUserId);
@@ -76,7 +77,7 @@ async function sendMailProvider(req) {
       }
     }
   } catch (err) {
-    console.log(`sendSystemMail Error: ${err}`);
+    logger.info(`sendSystemMail Error: ${err}`);
     if (err) {
       return { status: 'error' };
     }

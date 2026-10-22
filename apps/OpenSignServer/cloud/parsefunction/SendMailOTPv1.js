@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { appName, smtpenable, updateMailCount } from '../../Utils.js';
+import { logger } from '../../utils/logger.js';
 
 // A 4-digit code with no rate limit is brute-forceable, so the send is throttled
 // and the verification attempts are capped.
@@ -20,7 +21,7 @@ async function getDocument(docId) {
     const _res = res?.toJSON();
     return _res?.ExtUserPtr?.objectId;
   } catch (err) {
-    console.log('err ', err);
+    logger.info('err ', err);
   }
 }
 async function sendMailOTPv1(request) {
@@ -53,7 +54,7 @@ async function sendMailOTPv1(request) {
             code +
             '</p></div></div></div></body></html>',
         });
-        console.log('OTP sent', code);
+        logger.info('OTP sent');
         if (request.params?.docId) {
           const extUserId = await getDocument(request.params?.docId);
           if (extUserId) {
@@ -61,12 +62,11 @@ async function sendMailOTPv1(request) {
           }
         }
       } catch (err) {
-        console.log('error in send OTP mail', err);
+        logger.info('error in send OTP mail', err);
       }
       const tempOtp = new Parse.Query('defaultdata_Otp');
       tempOtp.equalTo('Email', email);
       const resultOTP = await tempOtp.first({ useMasterKey: true });
-      // console.log('resultOTP', resultOTP);
       if (resultOTP !== undefined) {
         const updateOtpQuery = new Parse.Query('defaultdata_Otp');
         const updateOtp = await updateOtpQuery.get(resultOTP.id, {
@@ -76,7 +76,6 @@ async function sendMailOTPv1(request) {
         updateOtp.set('Attempts', 0);
         updateOtp.set('ExpiresAt', new Date(Date.now() + OTP_TTL_MS));
         updateOtp.save(null, { useMasterKey: true });
-        //   console.log("update otp Res in tempSendOtp ", updateRes);
       } else {
         const otpClass = Parse.Object.extend('defaultdata_Otp');
         const newOtpQuery = new otpClass();
@@ -86,15 +85,14 @@ async function sendMailOTPv1(request) {
         newOtpQuery.set('Attempts', 0);
         newOtpQuery.set('ExpiresAt', new Date(Date.now() + OTP_TTL_MS));
         await newOtpQuery.save(null, { useMasterKey: true });
-        //   console.log("new otp Res in tempSendOtp ", newRes);
       }
       return 'Otp send';
     } else {
       return 'Please Enter valid email';
     }
   } catch (err) {
-    console.log('err in sendMailOTPv1');
-    console.log(err);
+    logger.info('err in sendMailOTPv1');
+    logger.info(err);
     return err;
   }
 }

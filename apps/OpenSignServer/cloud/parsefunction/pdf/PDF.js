@@ -56,7 +56,7 @@ async function unlinkFile(path) {
     try {
       fs.unlinkSync(path);
     } catch (err) {
-      console.log('Err in unlink file: ', path);
+      logger.info('Err in unlink file: ', path);
     }
   }
 }
@@ -72,7 +72,7 @@ async function uploadFile(pdfName, filepath) {
 
     return { imageUrl: fileUrl };
   } catch (err) {
-    console.log('Err ', err);
+    logger.info('Err ', err);
     // below line of code is used to remove exported signed pdf file from exports folder
     unlinkFile(filepath);
   }
@@ -141,7 +141,7 @@ async function updateDoc(
       DocumentHash: documentHash && isCompleted ? documentHash : undefined,
     };
   } catch (err) {
-    console.log('update doc err ', err);
+    logger.info('update doc err ', err);
     return 'err';
   }
 }
@@ -187,7 +187,7 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
       await sendSystemMail({ params });
     }
   } catch (err) {
-    console.log('err in sendnotifymail', err);
+    logger.info('err in sendnotifymail', err);
   }
 }
 
@@ -240,7 +240,7 @@ async function sendCompletedMail(obj) {
             body = _tenantRes?.CompletionBody ? tenant?.CompletionBody : body;
           }
         } catch (err) {
-          console.log('error in fetch tenant in signpdf', err.message);
+          logger.info('error in fetch tenant in signpdf', err.message);
         }
       }
     }
@@ -295,7 +295,7 @@ async function sendCompletedMail(obj) {
   };
   try {
     const res = await sendMailWithAttachment(params);
-    // console.log("res ", res)
+    // logger.info("res ", res)
     if (res?.status !== 'success') {
       unlinkFile(`./exports/signed_certificate_${doc.objectId}.pdf`);
     }
@@ -334,7 +334,7 @@ async function sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, file
   await axios.put(`${docUrl}/${doc.objectId}`, body, { headers });
   // used in API only
   if (doc.IsSendMail === false) {
-    console.log("don't send mail");
+    logger.info("don't send mail");
   } else {
     await sendCompletedMail({ isCustomMail, doc, mailProvider, filename });
   }
@@ -533,12 +533,12 @@ async function PDF(req) {
         fs.writeFileSync(signedFilePath, signedDocs);
         pdfSize = signedDocs.length;
         documentHash = generateDocumentHash(signedDocs);
-        console.log(`✅ PDF digitally signed created: ${signedFilePath} \n`);
+        logger.info(`✅ PDF digitally signed created: ${signedFilePath} \n`);
       } else {
         //`saveUrl` is used to save signed pdf in exports folder
         fs.writeFileSync(signedFilePath, PdfBuffer);
         pdfSize = PdfBuffer.length;
-        console.log(`New Signed PDF created called: ${signedFilePath}`);
+        logger.info(`New Signed PDF created called: ${signedFilePath}`);
       }
 
       // `uploadFile` is used to upload pdf to aws s3 and get it's url
@@ -571,7 +571,7 @@ async function PDF(req) {
         }
         // below code is used to remove exported signed pdf file from exports folder
         unlinkFile(signedFilePath);
-        // console.log(`New Signed PDF created called: ${filePath}`);
+        // logger.info(`New Signed PDF created called: ${filePath}`);
         if (updatedDoc.message === 'success') {
           return { status: 'success', data: data.imageUrl };
         } else {
@@ -586,12 +586,12 @@ async function PDF(req) {
       throw error;
     }
   } catch (err) {
-    console.log('Err in signpdf', err);
+    logger.info('Err in signpdf', err);
     const body = { DebugginLog: err?.message };
     try {
       await axios.put(`${docUrl}/${docId}`, body, { headers });
     } catch (err) {
-      console.log('err in saving debugginglog', err);
+      logger.info('err in saving debugginglog', err);
     }
     unlinkFile(pfxname);
     throw err;

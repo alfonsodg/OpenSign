@@ -1,6 +1,7 @@
 import { cloudServerUrl, serverAppId } from '../../Utils.js';
 import reportJson, { applySearch } from './reportsJson.js';
 import axios from 'axios';
+import { logger } from '../../utils/logger.js';
 function buildClassesUrl({ serverUrl, clsName, paramsObj, keys, orderBy, skip, limit, include }) {
   const url = new URL(`${serverUrl}/classes/${clsName}`);
   url.searchParams.set('where', JSON.stringify(paramsObj));
@@ -176,7 +177,7 @@ export default async function getReport(request) {
     }
   } catch (err) {
     const message = err?.response?.data?.error || err?.message || 'Something went wrong';
-    console.log('getreport error:', message);
+    logger.info('getreport error:', message);
     if (err.code == 209) {
       return { error: 'Invalid session token' };
     } else {

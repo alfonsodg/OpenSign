@@ -1,7 +1,8 @@
+import { logger } from '../../utils/logger.js';
 async function DocumentAftersave(request) {
   try {
     if (!request.original) {
-      console.log('new entry is insert in contracts_Document ', request?.object?.id);
+      logger.info('new entry is insert in contracts_Document ', request?.object?.id);
       const obj = request.object;
       const objId = obj?.id;
       const createdAt = obj?.get?.('createdAt');
@@ -33,8 +34,8 @@ async function DocumentAftersave(request) {
       }
     }
   } catch (err) {
-    console.log('err in aftersave of contracts_Document');
-    console.log(err);
+    logger.info('err in aftersave of contracts_Document');
+    logger.info(err);
   }
 
   async function updateDocumentMeta({ objId, createdAt, folder, ip, originIp }) {

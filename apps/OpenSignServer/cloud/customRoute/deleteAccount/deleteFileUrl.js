@@ -2,6 +2,7 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'node:fs/promises';
 import pLimit from 'p-limit';
 import { serverAppId } from '../../../Utils.js';
+import { logger } from '../../../utils/logger.js';
 
 // === Configuration ===
 const serverHost = new URL(process.env.SERVER_URL).hostname;
@@ -56,9 +57,9 @@ async function deleteS3File(fileUrl) {
 
   try {
     await getS3Client().send(new DeleteObjectCommand(params));
-    // console.log(`✅ Deleted from S3: ${params.Key}`);
+    // logger.info(`✅ Deleted from S3: ${params.Key}`);
   } catch (err) {
-    console.error(`❌ S3 delete failed: ${params.Key}:`, err.message);
+    logger.error(`❌ S3 delete failed: ${params.Key}:`, err.message);
   }
 }
 
@@ -73,12 +74,12 @@ async function deleteLocalFile(fileUrl) {
     if (localPath) {
       await fs.unlink(`./files/files/${localPath}`);
     }
-    // console.log(`🗑️ Deleted local file: ${localPath}`);
+    // logger.info(`🗑️ Deleted local file: ${localPath}`);
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.warn('⚠️ Local file not found:', fileUrl);
+      logger.warn('⚠️ Local file not found:', fileUrl);
     } else {
-      console.error('❌ Local delete failed:', err.message);
+      logger.error('❌ Local delete failed:', err.message);
     }
   }
 }
@@ -93,7 +94,7 @@ async function deleteFileByUrl(fileUrl) {
       return deleteS3File(fileUrl);
     }
   } catch {
-    console.warn('⚠️ Invalid URL, skipping:', fileUrl);
+    logger.warn('⚠️ Invalid URL, skipping:', fileUrl);
   }
 }
 
@@ -129,13 +130,13 @@ export async function deleteInBatches(className, userPointer) {
     // Step 2: Delete Parse objects
     if (results.length > 0) {
       await Parse.Object.destroyAll(results, { useMasterKey: true });
-      console.log(`🧹 Deleted ${results.length} Parse objects from ${className}`);
+      logger.info(`🧹 Deleted ${results.length} Parse objects from ${className}`);
     }
 
     hasMore = results.length === limit;
   }
 
-  console.log(`✅ Finished deletion from ${className} for user: ${userPointer.objectId}`);
+  logger.info(`✅ Finished deletion from ${className} for user: ${userPointer.objectId}`);
 }
 
 export async function deleteDataFiles(className, userPointer) {
@@ -166,13 +167,13 @@ export async function deleteDataFiles(className, userPointer) {
     // Step 2: Delete Parse objects
     if (results.length > 0) {
       await Parse.Object.destroyAll(results, { useMasterKey: true });
-      console.log(`🧹 Deleted ${results.length} Parse objects from ${className}`);
+      logger.info(`🧹 Deleted ${results.length} Parse objects from ${className}`);
     }
 
     hasMore = results.length === limit;
   }
 
-  console.log(`✅ Finished deletion from ${className} for user: ${userPointer.objectId}`);
+  logger.info(`✅ Finished deletion from ${className} for user: ${userPointer.objectId}`);
 }
 
 export async function deleteContactsInBatch(className, userPointer) {
@@ -187,11 +188,11 @@ export async function deleteContactsInBatch(className, userPointer) {
     const results = await query.find({ useMasterKey: true });
     if (results?.length > 0) {
       await Parse.Object.destroyAll(results, { useMasterKey: true });
-      console.log(`🧹 Deleted ${results.length} Parse objects from ${className}`);
+      logger.info(`🧹 Deleted ${results.length} Parse objects from ${className}`);
     }
 
     hasMore = results.length === limit;
   }
 
-  console.log(`✅ Finished deletion from ${className} for user: ${userPointer.objectId}`);
+  logger.info(`✅ Finished deletion from ${className} for user: ${userPointer.objectId}`);
 }

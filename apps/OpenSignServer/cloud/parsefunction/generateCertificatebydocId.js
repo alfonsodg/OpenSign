@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import GenerateCertificate from './pdf/GenerateCertificate.js';
 import { getSecureUrl } from '../../Utils.js';
 import { parseUploadFile } from '../../utils/fileUtils.js';
+import { logger } from '../../utils/logger.js';
 dotenv.config({ quiet: true });
 const eSignName = 'OpenSign';
 const eSigncontact = 'hello@opensignlabs.com';
@@ -21,7 +22,7 @@ async function uploadFile(pdfName, filepath) {
     fileUrl = getSecureUrl(fileRes?.url)?.url;
     return { imageUrl: fileUrl };
   } catch (err) {
-    console.log('Err ', err);
+    logger.info('Err ', err);
     // `unlinkCertificate` is used to remove exported certificate file from exports folder
     unlinkCertificate(filepath);
   }
@@ -32,7 +33,7 @@ async function unlinkCertificate(path) {
     try {
       fs.unlinkSync(path);
     } catch (err) {
-      console.log('Err in unlink certificate generatecertificatebydocid', err);
+      logger.info('Err in unlink certificate generatecertificatebydocid', err);
     }
   }
 }
@@ -104,7 +105,7 @@ export default async function generateCertificatebydocId(req) {
       return { CertificateUrl: '' };
     }
   } catch (error) {
-    console.error('Error fetching or processing document:', error);
+    logger.error('Error fetching or processing document:', error);
     const code = error?.code || 400;
     const message = error?.message || 'Something went wrong.';
     unlinkCertificate(certificatePath);

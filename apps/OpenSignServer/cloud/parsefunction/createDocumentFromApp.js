@@ -1,4 +1,5 @@
 import { setDocumentCount } from '../../utils/CountUtils.js';
+import { logger } from '../../utils/logger.js';
 
 export default async function createDocumentFromApp(request) {
   const doc = request.params?.document;
@@ -93,7 +94,7 @@ export default async function createDocumentFromApp(request) {
 
     return docRes;
   } catch (error) {
-    console.log('error in create document from app: ', error);
+    logger.info('error in create document from app: ', error);
     throw error;
   }
 }

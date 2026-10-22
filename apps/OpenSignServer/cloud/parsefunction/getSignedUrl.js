@@ -162,7 +162,7 @@ export function getSignedLocalUrl(fileUrl, expirationTimeInSeconds) {
     // Return the signed URL containing the token
     return `${fileUrl}?token=${token}`;
   } catch (err) {
-    console.log('Err while siging local url', err);
+    logger.info('Err while siging local url', err);
     throw new Error('Invalid or expired token.');
   }
 }
@@ -209,7 +209,7 @@ export async function validateSignedLocalUrl(signedUrl) {
     // If the token is valid and not expired, return the file URL
     return signedUrl;
   } catch (error) {
-    console.log('Error validating file', error.message);
+    logger.info('Error validating file', error.message);
     return 'Unauthorized';
   }
 }

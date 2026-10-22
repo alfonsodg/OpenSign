@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 export default async function addUser(request) {
   const { phone, name, password, organization, team, tenantId, timezone, role } = request.params;
   const email = request.params?.email?.toLowerCase()?.replace(/\s/g, '');
@@ -119,7 +120,7 @@ export default async function addUser(request) {
           return parseData;
         }
       } catch (err) {
-        console.log('err ', err);
+        logger.info('err ', err);
         if (err.code === 202) {
           const userQuery = new Parse.Query(Parse.User);
           userQuery.equalTo('email', email);
@@ -144,7 +145,7 @@ export default async function addUser(request) {
         }
       }
     } catch (err) {
-      console.log('err', err);
+      logger.info('err', err);
       throw new Parse.Error(400, err?.message || 'something went wrong');
     }
   } else {

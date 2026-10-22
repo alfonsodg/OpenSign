@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { cloudServerUrl, serverAppId } from '../../Utils.js';
+import { logger } from '../../utils/logger.js';
 
 const MAX_OTP_ATTEMPTS = 5;
 async function AuthLoginAsMail(request) {
@@ -86,7 +87,7 @@ async function AuthLoginAsMail(request) {
                   },
                 })
                   .then(function (res) {
-                    // console.log(res.data)
+                    // logger.info(res.data)
                     if (res.data) {
                       resolve(res.data);
                     } else {
@@ -113,8 +114,8 @@ async function AuthLoginAsMail(request) {
       return message;
     }
   } catch (err) {
-    console.log('err in Auth');
-    console.log(err);
+    logger.info('err in Auth');
+    logger.info(err);
     return 'Result not found';
   }
 }

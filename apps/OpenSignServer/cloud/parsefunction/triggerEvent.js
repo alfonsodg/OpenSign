@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { cloudServerUrl, serverAppId } from '../../Utils.js';
+import { logger } from '../../utils/logger.js';
 
 export default async function triggerEvent(request) {
   const event = request.params.event;
@@ -81,7 +82,7 @@ export default async function triggerEvent(request) {
 
     return { message: 'event called!' };
   } catch (err) {
-    console.log(
+    logger.info(
       `triggerEvent error: `,
       err?.response?.data?.error || err?.message || 'Something went wrong!'
     );

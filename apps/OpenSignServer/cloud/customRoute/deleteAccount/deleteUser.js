@@ -3,6 +3,7 @@ import { isAdminRole, isOrgAdminRole, ADMIN_ROLES } from '../../../utils/roles.j
 import { cloudServerUrl, generateId, serverAppId } from '../../../Utils.js';
 import { deleteContactsInBatch, deleteDataFiles, deleteInBatches } from './deleteFileUrl.js';
 import { MAX_ATTEMPTS } from './deleteUtils.js';
+import { logger } from '../../../utils/logger.js';
 const serverUrl = cloudServerUrl;
 const appId = serverAppId;
 
@@ -91,7 +92,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
         await deleteInBatches(className, userPointer);
       }
     } catch (err) {
-      console.error('Failed during contracts_Template cleanup:', err);
+      logger.error('Failed during contracts_Template cleanup:', err);
       const errorMessage = 'Failed during contracts_Template cleanup:' + err?.message;
       return { code: 400, message: errorMessage };
     }
@@ -100,7 +101,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
     try {
       await deleteContactsInBatch('contracts_Contactbook', userPointer);
     } catch (err) {
-      console.error('Failed during contactbook cleanup:', err);
+      logger.error('Failed during contactbook cleanup:', err);
       const errorMessage = 'Failed during contactbook cleanup:' + err?.message;
       return { code: 400, message: errorMessage };
     }
@@ -119,7 +120,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
         await resetPasswordAndDeleteSession(userId);
       }
     } catch (err) {
-      console.error('Failed during contactbook current user cleanup:', err);
+      logger.error('Failed during contactbook current user cleanup:', err);
       const errorMessage =
         'Failed during contactbook current user cleanup: ' + (err?.message || err);
       return { code: 400, message: errorMessage };
@@ -133,7 +134,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
       const tokens = await query.find({ useMasterKey: true });
       if (tokens?.length) await Parse.Object.destroyAll(tokens, { useMasterKey: true });
     } catch (err) {
-      console.error('Failed to delete appToken entries:', err);
+      logger.error('Failed to delete appToken entries:', err);
       const errorMessage = 'Failed to delete appToken entries:' + err?.message;
       return { code: 400, message: errorMessage };
     }
@@ -142,7 +143,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
     try {
       await deleteDataFiles('partners_DataFiles', userPointer);
     } catch (err) {
-      console.error('Failed during partners_DataFiles cleanup:', err);
+      logger.error('Failed during partners_DataFiles cleanup:', err);
       const errorMessage = 'Failed during partners_DataFiles cleanup:' + err?.message;
       return { code: 400, message: errorMessage };
     }
@@ -157,7 +158,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
           await object.destroy({ useMasterKey: true });
         }
       } catch (err) {
-        console.error('Failed to delete contracts_Organizations entry:', err);
+        logger.error('Failed to delete contracts_Organizations entry:', err);
         const errorMessage = 'Failed to delete contracts_Organizations entry:' + err?.message;
         return { code: 400, message: errorMessage };
       }
@@ -170,14 +171,14 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
               const teamObj = await new Parse.Query(Teams).get(team.id, { useMasterKey: true });
               if (teamObj) await teamObj.destroy({ useMasterKey: true });
             } catch (teamErr) {
-              console.error(`Failed to delete team with ID ${team.id}:`, teamErr);
+              logger.error(`Failed to delete team with ID ${team.id}:`, teamErr);
               const errorMessage = `Failed to delete team with ID ${team.id}` + teamErr?.message;
               return { code: 400, message: errorMessage };
             }
           }
         }
       } catch (err) {
-        console.error('Failed during contracts_Teams deletion loop:', err);
+        logger.error('Failed during contracts_Teams deletion loop:', err);
         const errorMessage = 'Failed during contracts_Teams deletion loop:' + err?.message;
         return { code: 400, message: errorMessage };
       }
@@ -192,7 +193,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
         }
       } catch (err) {
         const msg = `Failed during partners_Tenant ${'cleanup:'} `;
-        console.error(msg, err);
+        logger.error(msg, err);
         const errorMessage = msg + err?.message;
         return { code: 400, message: errorMessage };
       }
@@ -211,7 +212,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
           await Parse.Object.destroyAll(subs, { useMasterKey: true });
         }
       } catch (err) {
-        console.error('Failed during partners_TenantCredits cleanup:', err);
+        logger.error('Failed during partners_TenantCredits cleanup:', err);
         const errorMessage = 'Failed during partners_TenantCredits cleanup:' + err?.message;
         return { code: 400, message: errorMessage };
       }
@@ -224,7 +225,7 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
       const sigResults = await sigQuery.find({ useMasterKey: true });
       if (sigResults?.length > 0) await Parse.Object.destroyAll(sigResults, { useMasterKey: true });
     } catch (err) {
-      console.error('Failed during contracts_Signature cleanup:', err);
+      logger.error('Failed during contracts_Signature cleanup:', err);
       const errorMessage = 'Failed during contracts_Signature cleanup:' + err?.message;
       return { code: 400, message: errorMessage };
     }
@@ -233,13 +234,13 @@ export async function deleteUser(userId, adminId, adminTenantId, isOrgAdmin, org
     try {
       await userResult.destroy({ useMasterKey: true });
     } catch (err) {
-      console.error('Failed to delete contracts_Users entry:', err);
+      logger.error('Failed to delete contracts_Users entry:', err);
       const errorMessage = 'Failed to delete contracts_Users entry:' + err?.message;
       return { code: 400, message: errorMessage };
     }
     return { code: 200, message: 'User and all associated data deleted successfully.' };
   } catch (error) {
-    console.error('User deletion process failed:', error);
+    logger.error('User deletion process failed:', error);
     const errorMessage = `User deletion failed: ${error.message || error}`;
     return { code: 400, message: errorMessage };
   }
@@ -327,7 +328,7 @@ export const deleteUserPost = async (req, res) => {
       extUser.unset('DeleteOTPTries');
       await extUser.save(null, { useMasterKey: true });
     } catch (err) {
-      console.log('err while validating password: ', err?.response?.data || err);
+      logger.info('err while validating password: ', err?.response?.data || err);
     }
 
     const response = await deleteUser(userId);
@@ -335,7 +336,7 @@ export const deleteUserPost = async (req, res) => {
     const message = response?.message || 'An error occurred while deleting your account.';
     return res.status(code).send(message);
   } catch (error) {
-    console.error('Account deletion error:', error);
+    logger.error('Account deletion error:', error);
     const errorMessage = error?.message || 'An error occurred while deleting your account.';
     return res.status(500).send(errorMessage);
   }
@@ -399,7 +400,7 @@ export const deleteUserByAdmin = async (req, res) => {
     const response = await deleteUser(userId, adminId, tenantId, isOrgAdmin, orgPtr);
     const code = response?.code || 400;
     const message = response?.message || 'An error occurred while deleting your account.';
-    console.log('delete user ', code, message);
+    logger.info('delete user ', code, message);
     return res.status(code).json({ message: message });
   } catch (error) {
     const code = error?.response?.data?.code || 400;
@@ -407,7 +408,7 @@ export const deleteUserByAdmin = async (req, res) => {
       error?.response?.data?.error ||
       error?.message ||
       'An error occurred while deleting your account.';
-    console.error(`Account deletion error:`, errorMessage);
+    logger.error(`Account deletion error:`, errorMessage);
     return res.status(code).json({ message: errorMessage });
   }
 };

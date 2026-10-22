@@ -13,19 +13,36 @@ const redact = value => {
   );
 };
 
-const emit = (level, message, context = {}) => {
+// Turns an arbitrary value into something that survives JSON.stringify.
+const toSafe = value => {
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, code: value.code };
+  }
+  if (value === undefined) return null;
+  if (typeof value === 'bigint') return value.toString();
+  return redact(value);
+};
+
+const emit = (level, args) => {
+  const [first, ...rest] = args;
   const entry = {
     level,
-    message: String(message),
     time: new Date().toISOString(),
-    ...redact(context || {}),
+    message: typeof first === 'string' ? first : String(toSafe(first)),
   };
+  if (typeof first === 'object' && first !== null) {
+    entry.details = toSafe(first);
+  }
+  if (rest.length === 1) {
+    entry.details = toSafe(rest[0]);
+  } else if (rest.length > 1) {
+    entry.details = rest.map(toSafe);
+  }
   let line;
   try {
     line = JSON.stringify(entry);
   } catch {
-    // A non-serialisable context must never break the request.
-    line = JSON.stringify({ level, message: String(message), time: entry.time });
+    line = JSON.stringify({ level, time: entry.time, message: String(entry.message) });
   }
   if (level === 'error') console.error(line);
   else if (level === 'warn') console.warn(line);
@@ -33,9 +50,9 @@ const emit = (level, message, context = {}) => {
 };
 
 export const logger = {
-  info: (message, context) => emit('info', message, context),
-  warn: (message, context) => emit('warn', message, context),
-  error: (message, context) => emit('error', message, context),
+  info: (...args) => emit('info', args),
+  warn: (...args) => emit('warn', args),
+  error: (...args) => emit('error', args),
 };
 
 export default logger;

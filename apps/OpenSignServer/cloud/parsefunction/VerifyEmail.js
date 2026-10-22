@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 export default async function VerifyEmail(request) {
   try {
     if (!request?.user) {
@@ -60,7 +61,7 @@ export default async function VerifyEmail(request) {
               await extUser.save(null, { useMasterKey: true });
             }
           } catch (e) {
-            console.log('err syncing contracts_Users email', e?.message);
+            logger.info('err syncing contracts_Users email', e?.message);
           }
           // Consume the OTP
           try {
@@ -81,7 +82,7 @@ export default async function VerifyEmail(request) {
       }
     }
   } catch (err) {
-    console.log('err ', err.code + ' ' + err.message);
+    logger.info('err ', err.code + ' ' + err.message);
     throw err;
   }
 }

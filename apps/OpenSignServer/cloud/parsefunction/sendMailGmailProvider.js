@@ -2,6 +2,7 @@ import axios from 'axios';
 import { google } from 'googleapis';
 import fs from 'node:fs';
 import https from 'https';
+import { logger } from '../../utils/logger.js';
 const clientId = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 // Function to create a Gmail client
@@ -33,7 +34,7 @@ const getGmail = async (access_token, displayName) => {
     const gmail = res.data.email;
     return `${displayName} <${gmail}>`;
   } catch (err) {
-    console.log('gmail retrive error ', err);
+    logger.info('gmail retrive error ', err);
     return displayName;
   }
 };
@@ -86,7 +87,7 @@ const makeEmail = async (
               Pdf.on('error', () => resolve('error'));
             })
             .on('error', e => {
-              console.error(`error: ${e.message}`);
+              logger.error(`error: ${e.message}`);
               resolve('error');
             });
         } else {
@@ -99,7 +100,7 @@ const makeEmail = async (
               Pdf.on('error', () => resolve('error'));
             })
             .catch(e => {
-              console.log('error', e.message);
+              logger.info('error', e.message);
               resolve('error');
             });
         }
@@ -128,7 +129,7 @@ const makeEmail = async (
         }
       } catch (err) {
         attachments = [file];
-        console.log('sendMailGmailProvider read certificate error', err);
+        logger.info('sendMailGmailProvider read certificate error', err);
       }
     }
     const attachmentParts = attachments.map(attachment => {
@@ -232,26 +233,26 @@ export default async function sendMailGmailProvider(_extRes, template) {
         userId: 'me',
         requestBody: { raw: email },
       });
-      console.log('gmail provider res: ', response?.status);
+      logger.info('gmail provider res: ', response?.status);
       const certificatepath = certificatePath || './exports/certificate.pdf';
       if (fs.existsSync(certificatepath)) {
         try {
           fs.unlinkSync(certificatepath);
         } catch (err) {
-          console.log('Err in unlink certificate sendmailgmail provider');
+          logger.info('Err in unlink certificate sendmailgmail provider');
         }
       }
       if (fs.existsSync(testPdf)) {
         try {
           fs.unlinkSync(testPdf);
         } catch (err) {
-          console.log('sendMailGmailProvider unlink pdf error');
+          logger.info('sendMailGmailProvider unlink pdf error');
         }
       }
       return { code: 200, message: 'Email sent successfully' };
     } catch (error) {
       const message = error?.response?.data || error?.message || 'Unknown error';
-      console.error('Error sending email:', message);
+      logger.error('Error sending email:', message);
       return { code: 500, message: 'Failed to send email ' + error };
     }
   }

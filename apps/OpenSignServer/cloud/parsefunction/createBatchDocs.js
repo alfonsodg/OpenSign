@@ -4,6 +4,7 @@ import { setDocumentCount } from '../../utils/CountUtils.js';
 
 import crypto from 'crypto';
 import sendSystemMail from './sendSystemMail.js';
+import { logger } from '../../utils/logger.js';
 
 function chunkArray(arr, size) {
   const out = [];
@@ -83,7 +84,7 @@ async function sendOwnerSummaryEmail({
 
     await sendSystemMail({ params });
   } catch (e) {
-    console.log('batchdoc Failed to send owner summary email:', e?.message || e);
+    logger.info('batchdoc Failed to send owner summary email:', e?.message || e);
   }
 }
 
@@ -93,7 +94,7 @@ async function deductcount(docsCount, extUserId) {
       setDocumentCount(extUserId, docsCount);
     }
   } catch (err) {
-    console.log('batchdoc deductcount error: ', err);
+    logger.info('batchdoc deductcount error: ', err);
   }
 }
 async function sendMail(document, publicUrl) {
@@ -191,7 +192,7 @@ async function sendMail(document, publicUrl) {
       };
       await axios.post(url, params, { headers: headers });
     } catch (error) {
-      console.log('batchdoc sendmail error: ', error);
+      logger.info('batchdoc sendmail error: ', error);
     }
   }
 }
@@ -306,7 +307,7 @@ async function startBulkSendInBackground(userId, Documents, Ip, parseConfig, typ
     const newrequests = [requests?.[0]];
     const response = await axios.post('batch', { requests: newrequests }, parseConfig);
     // Handle the batch query response
-    // console.log('Batch query response:', response.data);
+    // logger.info('Batch query response:', response.data);
     if (response.data && response.data.length > 0) {
       const document = Documents?.[0];
       const updateDocuments = {
@@ -352,7 +353,7 @@ export default async function createBatchDocs(request) {
     // quicksend
     return await startBulkSendInBackground(userId, Documents, Ip, parseConfig, type, publicUrl);
   } catch (err) {
-    console.log('createbatchdoc error: ', err);
+    logger.info('createbatchdoc error: ', err);
     const code = err?.code || 400;
     const msg = err?.message || 'Something went wrong.';
     throw new Parse.Error(code, msg);

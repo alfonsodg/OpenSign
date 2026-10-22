@@ -1,5 +1,6 @@
 import { appName } from '../../Utils.js';
 import sendMailWithAttachment from './sendMailWithAttachment.js';
+import { logger } from '../../utils/logger.js';
 
 export default async function forwardDoc(request) {
   try {
@@ -54,7 +55,7 @@ export default async function forwardDoc(request) {
               `</div></div><div><p>This is an automated email from ${TenantAppName}. For any queries regarding this email, please contact the sender ${replyTo} directly.</p></div></div></body></html>`,
           };
           mailRes = await sendMailWithAttachment(params);
-          // console.log('mailRes', mailRes);
+          // logger.info('mailRes', mailRes);
         }
         return mailRes;
       } catch (error) {
@@ -69,7 +70,7 @@ export default async function forwardDoc(request) {
       throw new Parse.Error(Parse.Error.INVALID_QUERY, 'please provide parameters.');
     }
   } catch (err) {
-    console.log('Err in forwardDoc', err);
+    logger.info('Err in forwardDoc', err);
     throw err;
   }
 }
