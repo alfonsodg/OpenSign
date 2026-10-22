@@ -8,6 +8,7 @@ import Report from "./pages/Report";
 import Dashboard from "./pages/Dashboard";
 import HomeLayout from "./layout/HomeLayout";
 import PageNotFound from "./pages/PageNotFound";
+import ErrorBoundary from "./primitives/ErrorBoundary";
 import ValidateRoute from "./primitives/ValidateRoute";
 import Validate from "./primitives/Validate";
 import TemplatePlaceholder from "./pages/TemplatePlaceholder";
@@ -74,6 +75,7 @@ function App() {
           return "/";
         })()}>
           <Title />
+          <ErrorBoundary>
           <Routes>
             <Route element={<ValidateRoute />}>
               <Route exact path="/" element={<Lazy Page={Login} />} />
@@ -152,6 +154,7 @@ function App() {
             <Route path="/emailbuilder" element={<EmailBuilder />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
+          </ErrorBoundary>
         </BrowserRouter>
       )}
     </div>
