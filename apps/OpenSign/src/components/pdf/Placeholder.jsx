@@ -59,6 +59,8 @@ function Placeholder(props) {
   const widgetData =
     props.pos?.options?.defaultValue || props.pos?.options?.response;
   const [isDateModal, setIsDateModal] = useState(false);
+  // {x, y} of the alignment guides shown while dragging (null when none)
+  const [snapGuides, setSnapGuides] = useState({ x: null, y: null });
   const [containerScale, setContainerScale] = useState();
   const [selectDate, setSelectDate] = useState({});
   const [dateFormatList, setDateFormatList] = useState([]);
@@ -777,6 +779,36 @@ function Placeholder(props) {
   };
 
 
+  // Alignment targets for the widget currently being dragged: the page
+  // margin plus the edges and centres of the other widgets on the page.
+  const getSnapTargets = () => {
+    const containerScale = getContainerScale(
+      props.pdfOriginalWH,
+      props.widgetPageNum,
+      props.containerWH
+    );
+    const signerId = props.data?.Id || props.uniqueId;
+    const signer = (props.xyPosition || []).find((item) => item.Id === signerId);
+    const page = (signer?.placeHolder || []).find(
+      (item) => item.pageNumber === props.widgetPageNum
+    );
+    const widgets = (page?.pos || []).map((item) => ({
+      key: item.key,
+      xPx: (item.xPosition || 0) * containerScale,
+      yPx: (item.yPosition || 0) * containerScale,
+      widthPx: (item.Width || props.pos?.Width || 0) * containerScale,
+      heightPx: (item.Height || props.pos?.Height || 0) * containerScale
+    }));
+    const { verticalTargets, horizontalTargets } = alignmentTargets(widgets, {
+      excludeKey: props.pos.key
+    });
+    // The page's left and top margins are always valid targets.
+    return {
+      verticalTargets: [0, ...verticalTargets],
+      horizontalTargets: [0, ...horizontalTargets]
+    };
+  };
+
   return (
     <>
       {/*  Check if a text widget (prefill type) exists. Once the user enters a value and clicks outside or the widget becomes non-selectable, it should appear as plain text (just like embedded text in a document). When the user clicks on the text again, it should become editable. */}
@@ -891,8 +923,25 @@ function Placeholder(props) {
                     props?.uniqueId
                   )
           }}
-          onDrag={(_, d) => {
+          onDrag={(event, d) => {
             props?.handleTabDrag?.(props.pos.key);
+            if (!event?.altKey) {
+              const targets = getSnapTargets();
+              const snap = snapBox({
+                x: d.x,
+                y: d.y,
+                width: d.node?.offsetWidth || 0,
+                height: d.node?.offsetHeight || 0,
+                ...targets
+              });
+              setSnapGuides((prev) =>
+                prev.x === snap.guideX && prev.y === snap.guideY
+                  ? prev
+                  : { x: snap.guideX, y: snap.guideY }
+              );
+            } else if (snapGuides.x !== null || snapGuides.y !== null) {
+              setSnapGuides({ x: null, y: null });
+            }
             showGuidelines(
               true,
               d.x,
@@ -964,6 +1013,21 @@ function Placeholder(props) {
             if (props?.isDragging) {
               showGuidelines(false);
             }
+            // Snap to the neighbouring widgets and the page margin.
+            // Holding Alt keeps the free position.
+            if (!event?.altKey) {
+              const targets = getSnapTargets();
+              const snap = snapBox({
+                x: dragElement.x,
+                y: dragElement.y,
+                width: dragElement.node?.offsetWidth || 0,
+                height: dragElement.node?.offsetHeight || 0,
+                ...targets
+              });
+              dragElement.x = snap.x;
+              dragElement.y = snap.y;
+            }
+            setSnapGuides({ x: null, y: null });
             props?.handleStop?.(
               event,
               dragElement,
@@ -978,6 +1042,34 @@ function Placeholder(props) {
           }}
           disableDragging={handleDragging()}
         >
+          {(snapGuides.x !== null || snapGuides.y !== null) && (
+            <div className="pointer-events-none" style={{ position: "absolute", inset: 0, zIndex: 60 }}>
+              {snapGuides.x !== null && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    width: "1px",
+                    background: "#188ae2"
+                  }}
+                />
+              )}
+              {snapGuides.y !== null && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    height: "1px",
+                    background: "#188ae2"
+                  }}
+                />
+              )}
+            </div>
+          )}
           {props.pos.key === props?.currWidgetsDetails?.key &&
           ((props.isShowBorder &&
             ![radioButtonWidget, "checkbox"].includes(props.pos.type)) ||
