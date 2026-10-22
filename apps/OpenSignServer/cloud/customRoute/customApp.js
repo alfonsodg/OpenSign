@@ -11,7 +11,24 @@ import { deleteUserOtp } from './deleteAccount/deleteUserOtp.js';
 export const app = express();
 
 dotenv.config({ quiet: true });
-app.use(cors());
+const corsAllowlist = (
+  process.env.CORS_ORIGINS ||
+  [process.env.SERVER_URL, process.env.PUBLIC_URL, process.env.HOST_URL]
+    .filter(Boolean)
+    .join(',')
+)
+  .split(',')
+  .map(origin => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || corsAllowlist.length === 0) return callback(null, true);
+      return callback(null, corsAllowlist.includes(origin.replace(/\/$/, '')));
+    },
+  })
+);
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 

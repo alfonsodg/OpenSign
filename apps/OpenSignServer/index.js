@@ -112,7 +112,13 @@ export const config = {
   maxLimit: 500,
   maxUploadSize: '100mb',
   masterKey: process.env.MASTER_KEY, //Add your master key here. Keep it secret!
-  masterKeyIps: ['0.0.0.0/0', '::/0'], // '::1'
+  // The master key overrides every ACL, so it is only accepted from the
+  // addresses that actually need it: loopback by default, overridable for
+  // deployments that run the API in a separate container network.
+  masterKeyIps: (process.env.MASTER_KEY_IPS || '127.0.0.1,::1')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean),
   serverURL: cloudServerUrl, // Don't forget to change to https if needed
   verifyUserEmails: false,
   publicServerURL: process.env.SERVER_URL || cloudServerUrl,
@@ -167,7 +173,26 @@ export const config = {
 // javascriptKey, restAPIKey, dotNetKey, clientKey
 
 export const app = express();
-app.use(cors());
+// Only the configured public origins may call the API from a browser.
+// Requests without an Origin header (server to server, curl) keep working.
+const corsAllowlist = (
+  process.env.CORS_ORIGINS ||
+  [process.env.SERVER_URL, process.env.PUBLIC_URL, process.env.HOST_URL]
+    .filter(Boolean)
+    .join(',')
+)
+  .split(',')
+  .map(origin => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || corsAllowlist.length === 0) return callback(null, true);
+      return callback(null, corsAllowlist.includes(origin.replace(/\/$/, '')));
+    },
+  })
+);
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use(function (req, res, next) {
