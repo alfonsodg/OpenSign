@@ -4,6 +4,7 @@ import { useLocal } from '../../Utils.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { isAuthenticated } from '../../utils/AuthUtils.js';
+import { logger } from '../../utils/logger.js';
 dotenv.config({ quiet: true });
 
 function extractKeyFromUrl(url) {
@@ -117,7 +118,7 @@ export async function getSignedUrl(request) {
           return url;
         }
       } catch (err) {
-        console.log('Err in presigned url', err);
+        logger.error('presigned url failed', { reason: err?.message, code: err?.code });
         throw err;
       }
     } else {
@@ -137,7 +138,7 @@ export async function getSignedUrl(request) {
       }
     }
   } catch (err) {
-    console.log('error in getsignedurl', err);
+    logger.error('getsignedurl failed', { reason: err?.message, code: err?.code });
     const code = err.code || 400;
     const msg = err.message;
     const error = new Parse.Error(code, msg);

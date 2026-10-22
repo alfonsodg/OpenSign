@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
+import { logger } from '../../utils/logger.js';
 import axios from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import {
@@ -370,7 +371,7 @@ async function processPdf(_resDoc, PdfBuffer, reason) {
       form.flatten();
     }
   } catch (e) {
-    console.log('processPdf form flatten skipped:', e?.message);
+    logger.warn('processPdf form flatten skipped', { reason: e?.message });
   }
   try {
     Placeholder({
@@ -382,7 +383,7 @@ async function processPdf(_resDoc, PdfBuffer, reason) {
       signatureLength: 16000,
     });
   } catch (e) {
-    console.log('processPdf placeholder skipped:', e?.message);
+    logger.warn('processPdf placeholder skipped', { reason: e?.message });
   }
   const pdfWithPlaceholderBytes = await pdfDoc.save();
   return Buffer.from(pdfWithPlaceholderBytes);
