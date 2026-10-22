@@ -30,6 +30,19 @@ import { useDrop } from "react-dnd";
 import WidgetsDragPreview from "./WidgetsDragPreview";
 import { useScroll } from "../../context/ScrollPdfContext";
 
+// Keyboard tabbing follows the DOM order, so widgets are rendered in the
+// document reading order (top to bottom, then left to right) instead of the
+// order in which they were created.
+const inReadingOrder = (positions = []) =>
+  [...positions].sort((a, b) => {
+    const ay = a?.yPosition ?? 0;
+    const by = b?.yPosition ?? 0;
+    if (Math.abs(ay - by) > 2) return ay - by;
+    const ax = a?.xPosition ?? 0;
+    const bx = b?.xPosition ?? 0;
+    return ax - bx;
+  });
+
 function RenderPdf(props) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -657,7 +670,7 @@ function RenderPdf(props) {
           data?.placeHolder?.map((placeData, plKey) => (
             <React.Fragment key={`${key}-${plKey}`}>
               {placeData.pageNumber === pageNum &&
-                placeData.pos.map(
+                inReadingOrder(placeData.pos).map(
                   (pos, ind) =>
                     pos && (
                       <React.Fragment key={ind}>
@@ -732,7 +745,7 @@ function RenderPdf(props) {
             data?.placeHolder.map((placeData, index) => (
               <React.Fragment key={index}>
                 {placeData.pageNumber === pageNum &&
-                  placeData.pos.map((pos) => (
+                  inReadingOrder(placeData.pos).map((pos) => (
                     <React.Fragment key={pos.key}>
                       <Placeholder
                         pos={pos}
@@ -798,7 +811,7 @@ function RenderPdf(props) {
       return props.xyPosition?.map((data, ind) => (
         <React.Fragment key={ind}>
           {data.pageNumber === pageNum &&
-            data.pos.map(
+            inReadingOrder(data.pos).map(
               (pos, id) =>
                 pos && (
                   <Placeholder
