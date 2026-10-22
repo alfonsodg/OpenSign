@@ -4575,7 +4575,9 @@ export const decryptPdf = async (file, password) => {
   formData.append("file", file);
   formData.append("password", password);
   const config = {
-    responseType: "blob"
+    responseType: "blob",
+    // The endpoint requires an authenticated caller.
+    headers: { sessiontoken: localStorage.getItem("accesstoken") || "" }
   };
   const response = await axios.post(url, formData, config);
   const pdfBlob = new Blob([response.data], { type: "application/pdf" });
