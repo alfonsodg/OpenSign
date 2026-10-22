@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../../utils/logger.js';
 import axios from 'axios';
 import { PDFDocument } from 'pdf-lib';
 import {

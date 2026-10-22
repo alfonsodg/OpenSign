@@ -124,15 +124,10 @@ export const config = {
   publicServerURL: process.env.SERVER_URL || cloudServerUrl,
   // Your apps name. This will appear in the subject and body of the emails that are sent.
   appName: appName,
-  // Reject trivially weak passwords at signup and password change.
+  // Reject trivially weak passwords at signup and at password change.
+  // This Parse Server release accepts only these two keys.
   passwordPolicy: {
-    minLength: 8,
-    requiresNumber: true,
-    requiresUppercase: true,
-    requiresLowercase: true,
-    requiresSpecialCharacter: true,
-    validatorPattern: /^[\x20-\x7E]+$/,
-    validationError: 'Your password does not meet the minimum requirements.',
+    validatorPattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/,
   },
   allowClientClassCreation: false,
   allowExpiredAuthDataToken: false,
