@@ -1297,6 +1297,9 @@ function SignYourSelf() {
   ];
   const closeWidgetTour = () => {
     setWidgetsTour(false);
+    // The tour scrolls the document to the unsigned widget; bring the page
+    // back so the top bar with cancel/finish stays reachable.
+    window.scrollTo({ top: 0 });
   };
 
   return (
