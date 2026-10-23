@@ -122,20 +122,6 @@ const canEditInline =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.pos, widgetData, type]);
 
-  // Linked fields: propagate value to siblings on change (#31)
-  // Guard against re-entrancy: propagateLinked() replaces the position array,
-  // which re-renders the editor and used to feed the same value back, looping
-  // forever and starving React Router's transitions (the route never
-  // committed: the URL changed while the editor stayed on screen).
-  const propagatedValue = useRef(null);
-  useEffect(() => {
-    if (!canEditInline || widgetValue === undefined) return;
-    if (propagatedValue.current === widgetValue) return;
-    propagatedValue.current = widgetValue;
-    propagateLinked(widgetValue);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [widgetValue]);
-
   // Inline validation for text fields (PandaDoc parity #34)
   useEffect(() => {
     if (!canEditInline) {
