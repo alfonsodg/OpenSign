@@ -508,42 +508,21 @@ function PrefillWidgetModal(props) {
         );
       case "dropdown": {
         if (position?.options?.isMultiSelect) {
-          const optionsList = getOptionsList(position?.options?.values);
+          const optionLabel = (value) =>
+            value == null
+              ? ""
+              : typeof value === "object"
+                ? String(value.name ?? value.value ?? "")
+                : String(value);
+          const optionsList = (position?.options?.values || [])
+            .map(optionLabel)
+            .filter((value) => value !== "");
           const currentValues = Array.isArray(position?.options?.response)
-            ? position?.options?.response.map(normalizeOption)
+            ? position.options.response.map(optionLabel)
             : position?.options?.response
-              ? [normalizeOption(position?.options?.response)]
+              ? [optionLabel(position.options.response)]
               : [];
-          const persist = (next) => {
-            setFormData((prev) => ({ ...prev, [position.key]: next }));
-            setIsShowValidation(false);
-            props.setXyPosition?.((prev) =>
-              prev.map((item) => ({
-                ...item,
-                placeHolder: item.placeHolder.map((ph) => ({
-                  ...ph,
-                  pos: ph.pos.map((posItem) =>
-                    posItem.key === position.key
-                      ? { ...posItem, options: { ...posItem.options, response: next } }
-                      : posItem
-                  )
-                }))
-              }))
-            );
-            props.handleSaveWidgetsOptions(
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              next,
-              null,
-              null
-            );
-          };
+          const persist = (next) => handleWidgetDetails(position, next);
           return (
             <div className="flex flex-col gap-1 max-h-40 overflow-auto border border-base-300 rounded p-2">
               {optionsList.length === 0 ? (
@@ -574,7 +553,7 @@ function PrefillWidgetModal(props) {
             className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content text-base-content w-full text-xs"
             id="myDropdown"
             value={position?.options?.response || ""}
-            onChange={(e) => handleOnchangeTextBox(e, "dropdown")}
+            onChange={(e) => handleWidgetDetails(position, e.target.value)}
           >
             <option value="" disabled hidden>
               {t("choose-one")}

@@ -24,6 +24,7 @@ import {
   handleBackground
 } from "../../constant/Utils";
 import PlaceholderType from "./PlaceholderType";
+import { snapBox, alignmentTargets } from "../../utils/snapping";
 import moment from "moment";
 import "../../styles/opensigndrive.css";
 import { useTranslation } from "react-i18next";
