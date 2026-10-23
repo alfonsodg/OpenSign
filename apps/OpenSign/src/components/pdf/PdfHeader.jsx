@@ -19,6 +19,7 @@ import Loader from "../../primitives/Loader";
 import PageReorderModal from "./PageReorderModal";
 import { useTranslation } from "react-i18next";
 import { PDFDocument } from "pdf-lib";
+import { useNavigate } from "react-router";
 import { maxFileSize } from "../../constant/const";
 
 function Header(props) {
@@ -28,6 +29,19 @@ function Header(props) {
   const [isDeletePage, setIsDeletePage] = useState(false);
   const [isReorderModal, setIsReorderModal] = useState(false);
   const mergePdfInputRef = useRef(null);
+  const navigate = useNavigate();
+  // `history.go(-2)` is a no-op when the editor is opened directly (a reload,
+  // a bookmark or a new tab leaves history.length === 2), so the back control
+  // appeared to freeze on the template. Walk back only when there is an
+  // in-app entry to return to, otherwise fall back to the dashboard.
+  const handleBack = () => {
+    const idx = window.history.state && window.history.state.idx;
+    if (typeof idx === "number" && idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
   const enabledBackBtn = props?.disabledBackBtn === true ? false : true;
   const isViewerSigner = false;
   const finishLabel = t("finish");
@@ -198,7 +212,7 @@ function Header(props) {
           }}
         >
           <div className="flex justify-between items-center py-[5px] pl-[10px] ">
-            <div onClick={() => window.history.go(-2)}>
+            <div onClick={() => handleBack()}>
               <i
                 className="fa-light fa-arrow-left text-base-content"
                 aria-hidden="true"
@@ -499,7 +513,7 @@ function Header(props) {
                 )}
                 {enabledBackBtn && (
                   <button
-                    onClick={() => window.history.go(-2)}
+                    onClick={() => handleBack()}
                     type="button"
                     className="op-btn op-btn-ghost text-base-content op-btn-sm mr-[3px]"
                   >
@@ -676,7 +690,7 @@ function Header(props) {
           ) : (
             <div className="flex">
               <button
-                onClick={() => window.history.go(-2)}
+                onClick={() => handleBack()}
                 type="button"
                 className="op-btn op-btn-ghost text-base-content op-btn-sm mr-[3px]"
               >
