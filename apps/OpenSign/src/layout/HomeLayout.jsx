@@ -208,7 +208,7 @@ const HomeLayout = () => {
               </div>
             </main>
           </div>
-          {isTour && (
+          {isTour && tourConfigs.length > 0 && (
             <Tour
               onRequestClose={closeTour}
               steps={tourConfigs}
