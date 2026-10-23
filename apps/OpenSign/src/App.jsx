@@ -1,26 +1,26 @@
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { lazyWithRetry, hideUpgradeProgress } from "./utils";
 import { Routes, Route, BrowserRouter } from "react-router";
 import { getEnv } from "./constant/Utils";
 import { pdfjs } from "react-pdf";
-const Form = lazyWithRetry(() => import("./pages/Form"));
-const Report = lazyWithRetry(() => import("./pages/Report"));
-const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
+import Form from "./pages/Form";
+import Report from "./pages/Report";
+import Dashboard from "./pages/Dashboard";
 import HomeLayout from "./layout/HomeLayout";
 import PageNotFound from "./pages/PageNotFound";
 import ErrorBoundary from "./primitives/ErrorBoundary";
 import ValidateRoute from "./primitives/ValidateRoute";
 import Validate from "./primitives/Validate";
-const TemplatePlaceholder = lazyWithRetry(() => import("./pages/TemplatePlaceholder"));
-const SignYourSelf = lazyWithRetry(() => import("./pages/SignyourselfPdf"));
-const DraftDocument = lazyWithRetry(() => import("./components/pdf/DraftDocument"));
-const PlaceHolderSign = lazyWithRetry(() => import("./pages/PlaceHolderSign"));
-const PdfRequestFiles = lazyWithRetry(() => import("./pages/PdfRequestFiles"));
+import TemplatePlaceholder from "./pages/TemplatePlaceholder";
+import SignYourSelf from "./pages/SignyourselfPdf";
+import DraftDocument from "./components/pdf/DraftDocument";
+import PlaceHolderSign from "./pages/PlaceHolderSign";
+import PdfRequestFiles from "./pages/PdfRequestFiles";
 import Lazy from "./primitives/LazyPage";
 import Loader from "./primitives/Loader";
-const UserList = lazyWithRetry(() => import("./pages/UserList"));
+import UserList from "./pages/UserList";
 import { serverUrl_fn } from "./constant/appinfo";
-const DocSuccessPage = lazyWithRetry(() => import("./pages/DocSuccessPage"));
+import DocSuccessPage from "./pages/DocSuccessPage";
 import DragProvider from "./components/DragProivder";
 import Title from "./components/Title";
 const DebugPdf = lazyWithRetry(() => import("./pages/DebugPdf"));
@@ -76,13 +76,6 @@ function App() {
         })()}>
           <Title />
           <ErrorBoundary>
-          <Suspense
-            fallback={
-              <div className="flex justify-center items-center h-[100vh]">
-                <Loader />
-              </div>
-            }
-          >
           <Routes>
             <Route element={<ValidateRoute />}>
               <Route exact path="/" element={<Lazy Page={Login} />} />
@@ -161,7 +154,6 @@ function App() {
             <Route path="/emailbuilder" element={<EmailBuilder />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
-          </Suspense>
           </ErrorBoundary>
         </BrowserRouter>
       )}
