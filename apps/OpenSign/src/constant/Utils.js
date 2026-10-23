@@ -798,6 +798,21 @@ export async function getBase64FromUrl(url, autosign) {
   });
 }
 
+// Turns an already downloaded ArrayBuffer into base64, so callers do not
+// need to fetch the same URL a second time just to encode it.
+export const arrayBufferToBase64 = (buffer) => {
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(
+      null,
+      bytes.subarray(i, i + chunk)
+    );
+  }
+  return btoa(binary);
+};
+
 export async function getBase64FromIMG(url) {
   const data = await fetch(url);
   const blob = await data.blob();

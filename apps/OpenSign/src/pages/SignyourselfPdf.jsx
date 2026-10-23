@@ -8,6 +8,7 @@ import RenderAllPdfPage from "../components/pdf/RenderAllPdfPage";
 import EmailComponent from "../components/pdf/EmailComponent";
 import WidgetComponent from "../components/pdf/WidgetComponent";
 import {
+  arrayBufferToBase64,
   getTenantDetails,
   contractDocument,
   embedDocId,
@@ -29,7 +30,6 @@ import {
   onClickZoomIn,
   onClickZoomOut,
   rotatePdfPage,
-  getBase64FromUrl,
   convertBase64ToFile,
   generatePdfName,
   handleRemoveWidgets,
@@ -228,7 +228,9 @@ function SignYourSelf() {
         if (url) {
           //convert document url in array buffer format to use embed widgets in pdf using pdf-lib
           const arrayBuffer = await convertPdfArrayBuffer(url);
-          const base64Pdf = await getBase64FromUrl(url);
+          // One download is enough: encode the buffer we already have.
+          const base64Pdf =
+            arrayBuffer === "Error" ? "" : arrayBufferToBase64(arrayBuffer);
           if (arrayBuffer === "Error") {
             setHandleError(t("something-went-wrong-mssg"));
           } else {
