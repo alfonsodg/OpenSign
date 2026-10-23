@@ -202,7 +202,9 @@ function Header(props) {
     }
   };
   return (
-    <div className="flex py-[5px]">
+    // Sticky so the cancel/finish controls never scroll out of reach when
+    // the page jumps to an unsigned widget.
+    <div className="flex py-[5px] sticky top-0 z-[400] bg-base-100">
       {isMobile && props?.isShowHeader ? (
         <div
           id="navbar"
