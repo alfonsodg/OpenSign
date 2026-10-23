@@ -5,6 +5,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Sidebar from "../components/sidebar/Sidebar";
+import PageScrollContainer from "../components/PageScrollContainer";
 import Tour from "../primitives/Tour";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
@@ -173,9 +174,9 @@ const HomeLayout = () => {
   }
 
   return isValidSession && localStorage.getItem("accesstoken") ? (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="os-app-shell os-scroll-shell flex flex-col h-screen overflow-hidden">
       {/* HEADER */}
-      <header className="z-[501]">
+      <header className="os-shell-header z-[501]">
         {!isLoader && <Header setIsLoggingOut={setIsLoggingOut} />}
       </header>
       {isLoader ? (
@@ -190,14 +191,11 @@ const HomeLayout = () => {
             </div>
           )}
           {/* BODY */}
-          <div className="flex flex-1 overflow-hidden">
+          <div className="os-shell-body relative flex flex-1 min-h-0 overflow-hidden">
             {/* SIDEBAR with width animation */}
             <Sidebar />
             {/* MAIN (includes both content + footer in one scrollable column) */}
-            <main
-              id="renderList"
-              className="flex-1 overflow-auto transition-all duration-300 ease-in-out"
-            >
+            <PageScrollContainer>
               <div className="flex flex-col min-h-full">
                 {/* your page content */}
                 <div className="p-3">{<Outlet />}</div>
@@ -206,7 +204,7 @@ const HomeLayout = () => {
                   <Footer />
                 </div>
               </div>
-            </main>
+            </PageScrollContainer>
           </div>
           {isTour && tourConfigs.length > 0 && (
             <Tour
