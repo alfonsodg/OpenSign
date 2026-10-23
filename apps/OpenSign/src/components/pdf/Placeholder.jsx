@@ -245,15 +245,20 @@ function Placeholder(props) {
           props?.closeWidgetTour?.();
           // Inline editing: text widgets are edited in-field; only open the
           // modal for non-text widgets (signature, image, stamp, etc.).
-          const textTypes = [
+          // Types edited in place. Signature, stamp, initials and image stay
+          // on the modal because they need a drawing pad or a file picker.
+          const inlineTypes = [
             "text",
             textInputWidget,
             "name",
             "company",
             "job title",
-            "email"
+            "email",
+            "checkbox",
+            radioButtonWidget,
+            "dropdown"
           ];
-          if (!textTypes.includes(props.pos.type)) {
+          if (!inlineTypes.includes(props.pos.type)) {
             dispatch(setIsShowModal({ [props.pos.key]: true }));
           }
       }

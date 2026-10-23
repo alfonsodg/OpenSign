@@ -966,7 +966,10 @@ case "email":
           }}
         >
           {props.pos.options?.values.map((data, ind) => (
-            <div key={ind} className="select-none-cls pointer-events-none">
+            <div
+              key={ind}
+              className={canEditInline ? "" : "select-none-cls pointer-events-none"}
+            >
               <label
                 htmlFor={`radio-${props.pos.key + ind}`}
                 style={{
@@ -977,8 +980,27 @@ case "email":
                 className="mb-0 flex items-center" //removed text-xs
               >
                 <input
-                  readOnly
+                  readOnly={!canEditInline}
                   id={`radio-${props.pos.key + ind}`}
+                  onChange={() => {
+                    if (!canEditInline) return;
+                    if (props.setXyPosition) {
+                      onChangeInput(
+                        data,
+                        props.pos,
+                        props.xyPosition,
+                        props.index,
+                        props.setXyPosition,
+                        props.data?.Id || props.uniqueId,
+                        false,
+                        null,
+                        props.pos?.options?.fontSize || 12,
+                        props.pos?.options?.fontColor || "black",
+                        null,
+                        null
+                      );
+                    }
+                  }}
                   style={{
                     width: fontSize,
                     height: fontSize,
