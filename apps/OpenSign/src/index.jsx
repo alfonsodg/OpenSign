@@ -8,6 +8,7 @@ import { store } from "./redux/store";
 import Parse from "parse";
 import "./polyfills";
 import { serverUrl_fn } from "./constant/appinfo";
+import { getEnv } from "./constant/Utils";
 import { appInfo } from "./constant/appinfo";
 import "./i18n";
 import { ScrollProvider } from "./context/ScrollPdfContext";
