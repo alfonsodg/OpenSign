@@ -3,6 +3,7 @@ import ModalUi from "../../primitives/ModalUi";
 import { radioButtonWidget } from "../../constant/Utils";
 import { useTranslation } from "react-i18next";
 import { fontColorArr, fontsizeArr } from "../../constant/Utils";
+import { widgetNamesArr } from "../../utils";
 
 function DropdownWidgetOption(props) {
   const { t } = useTranslation();
@@ -116,6 +117,7 @@ function DropdownWidgetOption(props) {
       }
     }
 
+
     const isDropdownOrRadio =
       props?.type === "dropdown" || props?.type === radioButtonWidget;
     const isCheckbox = props?.type === "checkbox";
@@ -172,7 +174,13 @@ function DropdownWidgetOption(props) {
     );
   };
   return (
-    <ModalUi isOpen={props.showDropdown} title={props.title} showClose={false}>
+    <ModalUi
+      isOpen={props.showDropdown}
+      title={props.title}
+      showClose={false}
+      showScrollBar
+      portalToBody
+    >
       <div className="h-full p-[15px] text-base-content">
         <form
           onSubmit={(e) => {

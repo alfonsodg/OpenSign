@@ -1,14 +1,12 @@
 import { useLayoutEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
-// Scrolls the page area back to the top on every navigation. Ported from
-// upstream so the editor does not keep the previous scroll position.
 const PageScrollContainer = ({ children }) => {
   const { pathname } = useLocation();
   const scrollRef = useRef(null);
 
   useLayoutEffect(() => {
-    if (!scrollRef.current) return;
+    // Reset before paint, not after a lazy page finishes loading.
     scrollRef.current.scrollTop = 0;
     scrollRef.current.scrollLeft = 0;
   }, [pathname]);

@@ -163,7 +163,7 @@ function PlaceHolderSign() {
   const [owner, setOwner] = useState({});
   const [docTitle, setDocTitle] = useState("");
   const [isEditDoc, setIsEditDoc] = useState(false);
-  const isMobile = window.innerWidth < 767;
+  const isMobile = windowSize.width > 0 && windowSize.width < 767;
   const currentUser = localStorage.getItem(
     `Parse/${localStorage.getItem("parseAppId")}/currentUser`
   );
@@ -1072,10 +1072,24 @@ function PlaceHolderSign() {
       (s) => !utils?.hasSignatureWidget(s)
     );
 
+    let canSaveWithoutSignatureWidget = isPlaceholderExist;
+
     //checking if there are any signer list which do not have signture widget then show signers name on tour messages
     if (unassignedWidget.length > 0) {
-      const getSigner = unassignedWidget.map((x) => {
-        return signersdata.find((y) => y.Id === x.Id).Name;
+      const getSigner = unassignedWidget.map((x, index) => {
+        const signer = signersdata.find(
+          (y) =>
+            y.Id === x.Id || (x.signerObjId && y.objectId === x.signerObjId)
+        );
+        return (
+          signer?.Name ||
+          signer?.Role ||
+          signer?.Email ||
+          signersdata[index]?.Name ||
+          signersdata[index]?.Role ||
+          x.Role ||
+          x.Id
+        );
       });
       const signerName = getSigner.join(", ");
       const proceed = window.confirm(
@@ -1096,7 +1110,7 @@ function PlaceHolderSign() {
       setUnSignedWidgetId(unfilledTextWidgetId);
     } else if (signersdata?.length === 0) {
       alert(t("atleast-one-recipient-alert"));
-    } else if (isPlaceholderExist && unassignedWidget.length === 0) {
+    } else if (canSaveWithoutSignatureWidget && unassignedWidget.length === 0) {
       const IsSignerNotExist = filterPrefill?.filter((x) => !x.signerObjId);
       // below condition is used to hightlight the widget whose value is not provided by signer
       if (IsSignerNotExist && IsSignerNotExist?.length > 0) {
@@ -1119,7 +1133,8 @@ function PlaceHolderSign() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signerPos, signersdata, signatureType, pdfBase64Url]);
-  // `autosavedetails` is used to save doc details after every 2 sec when changes are happern in placeholder like drag-drop widgets, remove signers
+
+  //`autosavedetails` is used to save doc details after every 2 sec when changes are happern in placeholder like drag-drop widgets, remove signers
   const autosavedetails = async () => {
     const signers = signersdata?.reduce((acc, x) => {
       if (x.objectId) {
@@ -1265,7 +1280,7 @@ function PlaceHolderSign() {
       let signPdf = `${hostUrl}/login/${encodeBase64}`;
       shareLinkList.push({
         signerEmail: signerMail[i].Email,
-        url: signPdf
+        url: signPdf,
       });
     }
     return shareLinkList.map((data, ind) => {
@@ -1907,6 +1922,9 @@ function PlaceHolderSign() {
 
   const handleEditDocumentForm = async (data) => {
     setIsEditDoc(false);
+    if (Array.isArray(data?.QualifiedSignatureConfig)) {
+      setQesDocConfig(data.QualifiedSignatureConfig);
+    }
     const updateDocument = pdfDetails.map((x) => {
       return { ...x, ...data };
     });
@@ -1962,6 +1980,8 @@ function PlaceHolderSign() {
         ...Bcc,
         ...Cc,
         ...RedirectUrl,
+        QualifiedSignatureConfig:
+          updateDocument?.[0]?.QualifiedSignatureConfig || [],
         AllowModifications: updateDocument?.[0]?.AllowModifications || false
       };
       const updateTemplateObj = new Parse.Object("contracts_Document");
@@ -1982,7 +2002,7 @@ function PlaceHolderSign() {
       ) : handleError ? (
         <HandleError handleError={handleError} />
       ) : (
-        <div className="relative op-card overflow-hidden flex flex-col md:flex-row justify-between bg-base-300">
+        <div className="os-editor-artboard relative op-card overflow-hidden flex flex-col md:flex-row justify-between bg-base-300">
           {isUiLoading && (
             <div className="absolute h-full w-full flex flex-col justify-center items-center z-[999] bg-[#e6f2f2]/80">
               <Loader />
@@ -2012,6 +2032,7 @@ function PlaceHolderSign() {
             isOpen={isSendAlert.mssg === "prefill"}
           />
           <Tour
+            key={`signature-widget-${signersName}`}
             onRequestClose={() => handleCloseSendmailModal()}
             steps={signatureWidgetTour}
             isOpen={isSendAlert?.mssg === "sure" && true}
@@ -2032,7 +2053,7 @@ function PlaceHolderSign() {
             pdfDetails={pdfDetails}
           />
           {/* pdf render view */}
-          <div className="w-full md:w-[57%] flex mr-4">
+          <div className="os-pdf-stage w-full md:w-[57%] flex mr-4">
             <PdfTools
               clickOnZoomIn={clickOnZoomIn}
               clickOnZoomOut={clickOnZoomOut}
@@ -2055,6 +2076,7 @@ function PlaceHolderSign() {
               {/* this modal is used show send mail  message and after send mail success message */}
               <ModalUi
                 isOpen={isSend}
+                portalToBody
                 title={t(
                   utils.mailModalHead(
                     pdfDetails?.[0]?.SendinOrder,
@@ -2369,7 +2391,7 @@ function PlaceHolderSign() {
           </div>
 
           {/* signature button */}
-          <div className="w-full md:w-[23%] bg-base-100 overflow-y-auto hide-scrollbar">
+          <div className="os-recipient-rail w-full md:w-[23%] bg-base-100 overflow-y-auto hide-scrollbar">
             <div className={`max-h-screen`}>
               {isMobile ? (
                 <div>

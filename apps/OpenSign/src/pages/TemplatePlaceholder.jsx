@@ -170,6 +170,7 @@ const TemplatePlaceholder = () => {
   const [documentDetails, setDocumentDetails] = useState();
   const [copied, setCopied] = useState(false);
   const [isUseTemplate, setIsUseTemplate] = useState(false);
+  const useTemplateFlowRef = useRef(false);
   const [prevRole, setPrevRole] = useState("");
   const currentUser = localStorage.getItem(
     `Parse/${localStorage.getItem("parseAppId")}/currentUser`
@@ -801,13 +802,30 @@ const TemplatePlaceholder = () => {
 
     if (unassignedWidget?.length > 0) {
       const signersName = unassignedWidget
-        ?.map((x) => signersdata.find((y) => y.Id === x.Id)?.Role)
+        ?.map((x, index) => {
+          const signer = signersdata.find(
+            (y) =>
+              y.Id === x.Id || (x.signerObjId && y.objectId === x.signerObjId)
+          );
+          return (
+            signer?.Name ||
+            signer?.Role ||
+            signer?.Email ||
+            signersdata[index]?.Name ||
+            signersdata[index]?.Role ||
+            x.Role ||
+            x.Id
+          );
+        })
         ?.join(", ");
       setSignersName(signersName);
       setIsSendAlert(true);
       setUniqueId(unassignedWidget[0]?.Id);
       setRoleName("");
-    } else if (filterPrefill && filterPrefill?.length === 0) {
+      return;
+    }
+
+    if (filterPrefill && filterPrefill?.length === 0) {
       setIsAddRole(true);
     } else {
       handleSaveTemplate();
@@ -816,7 +834,8 @@ const TemplatePlaceholder = () => {
   useEffect(() => {
     if (
       pdfDetails?.[0]?.CreatedBy?.objectId !== user?.objectId ||
-      isPrefillModal
+      isPrefillModal ||
+      useTemplateFlowRef.current
     )
       return;
     const timer = setTimeout(() => {
@@ -828,6 +847,7 @@ const TemplatePlaceholder = () => {
 
   // `autosavedetails` is used to save template details after every 2 sec when changes are happern in placeholder like drag-drop widgets, remove signers
   const autosavedetails = async () => {
+    if (useTemplateFlowRef.current) return;
     let signers = [];
     let pdfUrl;
     if (isUploadPdf) {
@@ -1227,7 +1247,7 @@ const TemplatePlaceholder = () => {
     const obj = {
       Role: roleName || "Role " + count,
       Id: Id,
-      blockColor: color[index]
+      blockColor: color[index],
     };
     setSignersData((prevArr) => [...prevArr, obj]);
     const signerPosObj = {
@@ -1235,7 +1255,7 @@ const TemplatePlaceholder = () => {
       signerObjId: "",
       blockColor: color[index],
       Role: roleName || "Role " + count,
-      Id: Id
+      Id: Id,
     };
 
     setSignerPos((prev) => [...prev, signerPosObj]);
@@ -1359,6 +1379,7 @@ const TemplatePlaceholder = () => {
       return { ...x, ...data };
     });
     setPdfDetails(updateTemplate);
+    // Keep the editor state aligned with changes made in the edit modal.
     try {
       const Bcc = updateTemplate?.[0]?.Bcc?.length
         ? {
@@ -1795,7 +1816,7 @@ const TemplatePlaceholder = () => {
       let signPdf = `${hostUrl}/login/${encodeBase64}`;
       shareLinkList.push({
         signerEmail: signerMail[i].Email,
-        url: signPdf
+        url: signPdf,
       });
     }
     return shareLinkList.map((data, ind) => {
@@ -1835,6 +1856,7 @@ const TemplatePlaceholder = () => {
     setIsUiLoading(false);
   };
   const handleUseButton = async () => {
+    useTemplateFlowRef.current = true;
     setIsCreateDocModal(false);
     //this function is used to open modal to show signers list
     await utils?.handleDisplaySignerList(signerPos, signersdata, setForms);
@@ -1859,7 +1881,7 @@ const TemplatePlaceholder = () => {
       ) : handleError ? (
         <HandleError handleError={handleError} />
       ) : (
-        <div className="relative op-card overflow-hidden flex flex-col md:flex-row justify-between bg-base-300">
+        <div className="os-editor-artboard relative op-card overflow-hidden flex flex-col md:flex-row justify-between bg-base-300">
           {isUiLoading && (
             <div className="absolute h-full w-full flex flex-col justify-center items-center z-[999] bg-[#e6f2f2]/80">
               <Loader />
@@ -1890,6 +1912,7 @@ const TemplatePlaceholder = () => {
           )}
           {isSendAlert && (
             <Tour
+              key={`signature-widget-${signersName}`}
               onRequestClose={() => setIsSendAlert(false)}
               steps={signatureWidgetTour}
               isOpen={true}
@@ -1921,7 +1944,7 @@ const TemplatePlaceholder = () => {
           />
 
           {/* pdf render view */}
-          <div className="w-full md:w-[57%] flex mr-4">
+          <div className="os-pdf-stage w-full md:w-[57%] flex mr-4">
             <PdfTools
               clickOnZoomIn={clickOnZoomIn}
               clickOnZoomOut={clickOnZoomOut}
@@ -1953,6 +1976,7 @@ const TemplatePlaceholder = () => {
               <ModalUi
                 isOpen={isCreateDocModal}
                 title={t("create-document")}
+                portalToBody
                 handleClose={() => {
                   setIsCreateDocModal(false);
                   navigate("/report/6TeaPr321t");
@@ -2174,7 +2198,7 @@ const TemplatePlaceholder = () => {
               />
             </div>
           ) : (
-            <div className="w-[23%] bg-base-100 min-h-screen overflow-y-auto hide-scrollbar">
+            <div className="os-recipient-rail w-[23%] bg-base-100 min-h-screen overflow-y-auto hide-scrollbar">
               <div className="max-h-screen">
                 <SignerListPlace
                   signerPos={signerPos}

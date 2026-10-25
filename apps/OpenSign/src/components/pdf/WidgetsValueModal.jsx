@@ -1032,17 +1032,15 @@ function WidgetsValueModal(props) {
     setWidgetValue(date);
     setStartDate(date);
   };
-    const normalizeOption = (option) => {
-    if (option == null) return "";
-    if (typeof option === "object") {
-      return String(option.name ?? option.value ?? "");
+
+  const getDropdownText = (value) => {
+    if (Array.isArray(value)) return value.map(getDropdownText).join(", ");
+    if (value && typeof value === "object" && value.name != null) {
+      return String(value.name);
     }
-    return String(option);
+    return value == null ? "" : String(value);
   };
-  const getOptionsList = () => {
-    const opts = currWidgetsDetails?.options?.values || [];
-    return opts.map(normalizeOption).filter((o) => o !== "");
-  };
+
   const handleOnchangeTextBox = (e) => {
     // hide any prior validation error while typing
     setIsShowValidation(false);
@@ -1449,6 +1447,7 @@ function WidgetsValueModal(props) {
       case cellsWidget:
         return (
           <CellsInput
+            ref={widgetRef}
             cellsValue={widgetValue}
             handleCellsInput={handleCellsInput}
             textInputcls={textInputcls}
@@ -1514,7 +1513,7 @@ function WidgetsValueModal(props) {
           <select
             className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content text-base-content w-full text-xs"
             id="myDropdown"
-            value={widgetValue?.trim()}
+            value={getDropdownText(widgetValue).trim()}
             onChange={(e) => handleOnchangeTextBox(e)}
           >
             {/* Default/Title option */}
@@ -1523,8 +1522,8 @@ function WidgetsValueModal(props) {
               {t("choose-one")}
             </option>
             {currWidgetsDetails?.options?.values?.map((data, ind) => (
-              <option key={ind} value={data?.trim()}>
-                {data?.trim()}
+              <option key={ind} value={getDropdownText(data).trim()}>
+                {getDropdownText(data).trim()}
               </option>
             ))}
           </select>
@@ -1903,7 +1902,7 @@ function WidgetsValueModal(props) {
       const editableWidgets = (widgetsPosition?.placeHolder ?? []).flatMap(
         ({ pos = [], pageNumber }) =>
           pos
-            .filter(({ options, key }) => {
+            .filter(({ options, key, type }) => {
               if (
                 options?.isReadOnly
               )

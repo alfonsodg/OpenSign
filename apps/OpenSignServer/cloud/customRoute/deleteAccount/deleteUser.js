@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { isAdminRole, isOrgAdminRole, ADMIN_ROLES } from '../../../utils/roles.js';
 import { cloudServerUrl, generateId, serverAppId } from '../../../Utils.js';
+import { resolveBrandContext } from '../../../utils/brandContext.js';
 import { deleteContactsInBatch, deleteDataFiles, deleteInBatches } from './deleteFileUrl.js';
 import { MAX_ATTEMPTS } from './deleteUtils.js';
 import { logger } from '../../../utils/logger.js';

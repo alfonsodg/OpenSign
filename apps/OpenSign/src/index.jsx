@@ -8,9 +8,19 @@ import { store } from "./redux/store";
 import Parse from "parse";
 import "./polyfills";
 import { serverUrl_fn } from "./constant/appinfo";
-import { getEnv } from "./constant/Utils";
+import { appInfo } from "./constant/appinfo";
 import "./i18n";
 import { ScrollProvider } from "./context/ScrollPdfContext";
+import { applyRuntimeFont } from "./constant/brandPresentation";
+import { getRuntimeConfig } from "./constant/runtimeConfig";
+
+const startupRuntimeConfig = getRuntimeConfig();
+applyRuntimeFont(startupRuntimeConfig);
+document.documentElement.setAttribute(
+  "data-brand",
+  startupRuntimeConfig.brandKey || "opensign"
+);
+
 
 const appId =
   getEnv()?.REACT_APP_APPID ||
@@ -28,6 +38,8 @@ if (localStorage.getItem("showUpgradeProgress")) {
 const savedTheme = localStorage.getItem("theme");
 if (savedTheme === "dark") {
   document.documentElement.setAttribute("data-theme", "opensigndark");
+} else {
+  document.documentElement.setAttribute("data-theme", "opensigncss");
 }
 
 

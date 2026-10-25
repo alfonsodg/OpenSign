@@ -1,11 +1,5 @@
-import { randomInt } from 'node:crypto';
-import { appName, smtpenable, updateMailCount } from '../../Utils.js';
-import { logger } from '../../utils/logger.js';
-
-// A 4-digit code with no rate limit is brute-forceable, so the send is throttled
-// and the verification attempts are capped.
-const OTP_COOLDOWN_MS = 60 * 1000;
-const OTP_TTL_MS = 10 * 60 * 1000;
+import { smtpenable, updateMailCount } from '../../Utils.js';
+import { escapeHtml, renderEmailHeading, resolveBrandContext } from '../../utils/brandContext.js';
 async function getDocument(docId) {
   try {
     const query = new Parse.Query('contracts_Document');
@@ -19,7 +13,7 @@ async function getDocument(docId) {
     query.notEqualTo('IsArchive', true);
     const res = await query.first({ useMasterKey: true });
     const _res = res?.toJSON();
-    return _res?.ExtUserPtr?.objectId;
+    return _res?.ExtUserPtr;
   } catch (err) {
     logger.info('err ', err);
   }
@@ -30,7 +24,11 @@ async function sendMailOTPv1(request) {
     let code = randomInt(1000, 10000);
     let email = request.params.email;
     let TenantId = request.params.TenantId ? request.params.TenantId : undefined;
-    const AppName = appName;
+    const documentOwner = request.params?.docId
+      ? await getDocument(request.params.docId)
+      : undefined;
+    const brand = resolveBrandContext({});
+    const AppName = brand.productName;
 
     if (email) {
       const existingOtpQuery = new Parse.Query('defaultdata_Otp');
@@ -45,21 +43,18 @@ async function sendMailOTPv1(request) {
       const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
       try {
         await Parse.Cloud.sendEmail({
-          sender: AppName + ' <' + mailsender + '>',
+          sender: brand.senderName + ' <' + mailsender + '>',
           recipient: recipient,
           subject: `Your ${AppName} OTP`,
           text: 'otp email',
           html:
-            `<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body><div style='background-color:#f5f5f5;padding:20px'><div style='background-color:white;'><div style='background-color:red;padding:2px;font-family:system-ui;background-color:#47a3ad;'><p style='font-size:20px;font-weight:400;color:white;padding-left:20px;'>OTP Verification</p></div><div style='padding:20px;'><p style='font-family:system-ui;font-size:14px;'>Your OTP for ${AppName} verification is:</p><p style='text-decoration:none;font-weight:bolder;color:blue;font-size:45px;margin:20px;'>` +
+            `<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body><div style='background-color:#f5f5f5;padding:20px'><div style='background-color:white;'>${renderEmailHeading(brand, 'OTP Verification')}<div style='padding:20px;'><p style='font-family:system-ui;font-size:14px;'>Your OTP for ${escapeHtml(AppName)} verification is:</p><p style='text-decoration:none;font-weight:bolder;color:blue;font-size:45px;margin:20px;'>` +
             code +
             '</p></div></div></div></body></html>',
         });
-        logger.info('OTP sent');
-        if (request.params?.docId) {
-          const extUserId = await getDocument(request.params?.docId);
-          if (extUserId) {
-            updateMailCount(extUserId);
-          }
+        console.log('OTP sent', code);
+        if (documentOwner?.objectId) {
+          updateMailCount(documentOwner.objectId);
         }
       } catch (err) {
         logger.info('error in send OTP mail', err);

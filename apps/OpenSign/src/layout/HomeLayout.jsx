@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { runtimeUrls } from "../constant/const";
 import {
   nonPresentMaskCss
 } from "../constant/Utils";
@@ -11,6 +12,7 @@ import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import Parse from "parse";
 import {
+  useLocation,
   Outlet
 } from "react-router";
 import Loader from "../primitives/Loader";
@@ -22,6 +24,16 @@ const HomeLayout = () => {
   const appName =
     "OpenSign™";
   const { t, i18n } = useTranslation();
+  const location = useLocation();
+  const isEditorRoute = [
+    "/draftDocument",
+    "/kiosk",
+    "/load/recipientSignPdf/",
+    "/placeHolderSign/",
+    "/recipientSignPdf/",
+    "/signaturePdf/",
+    "/template/"
+  ].some((route) => location.pathname.startsWith(route));
   const dispatch = useDispatch();
   const tourArr = useSelector((state) => state.TourSteps);
   const isValidSession = useSelector((state) => state.user.isValidSession);
@@ -82,7 +94,7 @@ const HomeLayout = () => {
   }, [tourArr]);
 
   const handleDynamicSteps = () => {
-    const github = "https://github.com/OpenSignLabs/OpenSign";
+    const github = runtimeUrls.github;
     if (tourArr && tourArr.length > 0) {
       const resArr = tourArr.map((obj, index) => {
         if (tourArr.length - 1 === index) {
@@ -110,17 +122,19 @@ const HomeLayout = () => {
           content: () => (
             <div>
               {t("tour-mssg.home-layout-3", { appName })}
-              <p className="mt-[3px]">
-                ⭐ Star us on
-                <a
-                  href={github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline font-medium pl-1 cursor-pointer"
-                >
-                  GitHub
-                </a>
-              </p>
+              {github && (
+                <p className="mt-[3px]">
+                  ⭐ Star us on
+                  <a
+                    href={github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-medium pl-1 cursor-pointer"
+                  >
+                    GitHub
+                  </a>
+                </p>
+              )}
             </div>
           ),
           position: "center",
@@ -174,9 +188,11 @@ const HomeLayout = () => {
   }
 
   return isValidSession && localStorage.getItem("accesstoken") ? (
-    <div className="os-app-shell os-scroll-shell flex flex-col h-screen overflow-hidden">
+    <div
+      className={`os-app-shell os-scroll-shell${isEditorRoute ? " os-has-editor" : ""} flex flex-col h-screen overflow-hidden`}
+    >
       {/* HEADER */}
-      <header className="os-shell-header z-[501]">
+      <header className="os-shell-header">
         {!isLoader && <Header setIsLoggingOut={setIsLoggingOut} />}
       </header>
       {isLoader ? (
@@ -186,7 +202,12 @@ const HomeLayout = () => {
       ) : (
         <>
           {isLoggingOut && (
-            <div className="inset-0 bg-black/30 z-[1000] fixed flex justify-center items-center">
+            <div
+              role="status"
+              aria-live="polite"
+              aria-label={t("logging-out-to-apply-settings")}
+              className="inset-0 bg-black/30 z-[1000] fixed flex justify-center items-center"
+            >
               <Loader />
             </div>
           )}
@@ -200,7 +221,7 @@ const HomeLayout = () => {
                 {/* your page content */}
                 <div className="p-3">{<Outlet />}</div>
                 {/* sticky-but-scrollable footer */}
-                <div className="mt-auto z-30">
+                <div className="os-app-footer mt-auto z-30">
                   <Footer />
                 </div>
               </div>

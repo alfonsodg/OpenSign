@@ -61,6 +61,12 @@ export default async function addUser(request) {
         throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Unauthorized.');
       }
 
+      const existingUserQuery = new Parse.Query('contracts_Users');
+      existingUserQuery.equalTo('Email', email);
+      if (await existingUserQuery.first({ useMasterKey: true })) {
+        throw new Parse.Error(Parse.Error.EMAIL_TAKEN, 'User already exists.');
+      }
+
       const extUser = new Parse.Object('contracts_Users');
       extUser.set('Name', name);
       if (phone) {
@@ -122,6 +128,9 @@ export default async function addUser(request) {
       } catch (err) {
         logger.info('err ', err);
         if (err.code === 202) {
+          if (await existingUserQuery.first({ useMasterKey: true })) {
+            throw new Parse.Error(Parse.Error.EMAIL_TAKEN, 'User already exists.');
+          }
           const userQuery = new Parse.Query(Parse.User);
           userQuery.equalTo('email', email);
           const userRes = await userQuery.first({ useMasterKey: true });
@@ -141,12 +150,12 @@ export default async function addUser(request) {
           const parseData = JSON.parse(JSON.stringify(res));
           return parseData;
         } else {
-          throw new Parse.Error(400, err?.message || 'something went wrong');
+          throw new Parse.Error(err?.code || 400, err?.message || 'something went wrong');
         }
       }
     } catch (err) {
-      logger.info('err', err);
-      throw new Parse.Error(400, err?.message || 'something went wrong');
+      console.log('err', err);
+      throw new Parse.Error(err?.code || 400, err?.message || 'something went wrong');
     }
   } else {
     throw new Parse.Error(400, 'Please provide all required fields.');
