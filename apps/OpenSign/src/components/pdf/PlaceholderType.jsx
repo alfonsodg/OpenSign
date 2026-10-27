@@ -180,12 +180,19 @@ const canEditInline =
 
   const handleRadioCheck = (data) => {
     if (!props?.isPrefillModal) {
-      const defaultData = widgetValue
-        ? widgetValue?.trim()
-        : props.pos?.options?.defaultValue
-          ? props.pos?.options?.defaultValue?.trim()
-          : "";
-      return defaultData === data?.trim();
+      // default values are not always strings: multi-select and AcroForm
+      // imports store arrays or { name, checked } objects, and calling trim()
+      // on those breaks the whole render.
+      const asText = (value) =>
+        value == null
+          ? ""
+          : typeof value === "string"
+            ? value.trim()
+            : Array.isArray(value)
+              ? value.map(getRadioLabel).join(",").trim()
+              : getRadioLabel(value).trim();
+      const defaultData = asText(widgetValue || props.pos?.options?.defaultValue);
+      return defaultData === asText(data);
     }
   };
   //function is used to get prefill image's signedUrl after expired
