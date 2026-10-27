@@ -276,7 +276,9 @@ function Placeholder(props) {
             "email",
             "checkbox",
             radioButtonWidget,
-            "dropdown"
+            "dropdown",
+            "date",
+            cellsWidget
           ];
           if (!inlineTypes.includes(props.pos.type)) {
             dispatch(setIsShowModal({ [props.pos.key]: true }));

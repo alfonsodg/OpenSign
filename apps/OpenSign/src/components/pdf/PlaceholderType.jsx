@@ -16,6 +16,7 @@ import {
   drawWidget,
   changeDateToMomentFormat
 } from "../../constant/Utils";
+import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/signature.css";
 import { useTranslation } from "react-i18next";
@@ -840,7 +841,58 @@ case "job title":
           <span className="ml-0.5">{formatWidgetName()}</span>
         </div>
       );
-    case "date":
+    case "date": {
+      const dateFormat =
+        props?.selectDate?.format ||
+        props.pos?.options?.validation?.format ||
+        "MM/dd/yyyy";
+      const momentFormat = changeDateToMomentFormat(dateFormat);
+      const savedDate =
+        props.pos?.options?.response ||
+        (defaultData !== "today" ? defaultData : "");
+      const savedMoment = savedDate ? moment(savedDate, momentFormat, true) : null;
+      if (canEditInline && (iswidgetEnable || props?.data?.Role === "prefill")) {
+        return (
+          <div
+            className="h-full w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DatePicker
+              selected={
+                savedMoment && savedMoment.isValid()
+                  ? savedMoment.toDate()
+                  : null
+              }
+              onChange={(value) => {
+                const text = value ? moment(value).format(momentFormat) : "";
+                if (!props.setXyPosition) return;
+                onChangeInput(
+                  text,
+                  props.pos,
+                  props.xyPosition,
+                  props.index,
+                  props.setXyPosition,
+                  props.data?.Id || props.uniqueId,
+                  false,
+                  dateFormat,
+                  props.pos?.options?.fontSize || 12,
+                  props.pos?.options?.fontColor || "black",
+                  null,
+                  null
+                );
+              }}
+              dateFormat={momentFormat}
+              customInput={
+                <input
+                  style={{ fontSize: fontSize, color: fontColor }}
+                  className="h-full w-full cursor-pointer bg-transparent outline-none"
+                  readOnly
+                />
+              }
+            />
+          </div>
+        );
+      }
       return iswidgetEnable || props?.data?.Role === "prefill" ? (
         <div className={`${selectWidgetCls} outline-[#007bff]`}>
           <span
@@ -865,6 +917,7 @@ case "job title":
           </span>
         </div>
       );
+    }
     case "image":
       return prefillImgLoad[props.pos?.key] ? (
         <div className="absolute w-full h-full inset-0 flex justify-center items-center bg-white/30 z-50">
