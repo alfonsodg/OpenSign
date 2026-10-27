@@ -2456,7 +2456,29 @@ export const embedWidgetsToDoc = async (
             ? toValues(position?.options?.response)
             : toValues(position?.options?.defaultValue);
           if (selectedValues.length > 0) {
-            dropdown.select(...selectedValues.map(String));
+            const allowed = (position?.options?.values || []).map((v) =>
+              v == null
+                ? ""
+                : typeof v === "object"
+                  ? String(v?.name ?? v?.value ?? "")
+                  : String(v)
+            );
+            const picked = selectedValues
+              .map((v) =>
+                v == null
+                  ? ""
+                  : typeof v === "object"
+                    ? String(v?.name ?? v?.value ?? "")
+                    : String(v)
+              )
+              .filter((v) => v && allowed.includes(v));
+            if (picked.length > 0) {
+              try {
+                dropdown.select(...picked);
+              } catch (e) {
+                // ignore values pdf-lib refuses; keep the rest of the embed
+              }
+            }
           }
           // Define the default appearance string
           // Example format: `/FontName FontSize Tf 0 g` where:
@@ -2562,17 +2584,27 @@ export const embedWidgetsToDoc = async (
               }
             });
           }
-          const isOptionExist = position?.options?.values?.some(
-            (x) =>
-              x === position?.options?.response ||
-              position?.options?.defaultValue
+          // pdf-lib only accepts a string that exists in the option list;
+          // anything else (NaN, objects, stale values) aborts the whole embed.
+          const asOptionText = (value) =>
+            value == null
+              ? ""
+              : typeof value === "string"
+                ? value
+                : typeof value === "object"
+                  ? String(value?.name ?? value?.value ?? "")
+                  : String(value);
+          const radioOptions = (position?.options?.values || []).map(
+            asOptionText
           );
-          if (isOptionExist) {
-            // 5. Pre‐select a value if provided
-            if (position?.options?.response) {
-              radioGroup.select(position.options?.response);
-            } else if (position?.options?.defaultValue) {
-              radioGroup.select(position?.options?.defaultValue);
+          const wantedRadio =
+            asOptionText(position?.options?.response) ||
+            asOptionText(position?.options?.defaultValue);
+          if (wantedRadio && radioOptions.includes(wantedRadio)) {
+            try {
+              radioGroup.select(wantedRadio);
+            } catch (e) {
+              // a bad value must not block the document from finishing
             }
           }
           // 6. Set to read‐only (if required)
