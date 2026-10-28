@@ -1912,6 +1912,20 @@ function WidgetsValueModal(props) {
     } else if (!isSave) {
       const widgetsPosition = xyPosition?.find((data) => data.Id === uniqueId);
       let nextWidgetDetails = null;
+      if (window.__NEXT_DEBUG__) {
+        console.table(
+          (widgetsPosition?.placeHolder ?? []).flatMap(({ pos = [] }) =>
+            pos.map((w) => ({
+              key: w.key,
+              type: w.type,
+              response: JSON.stringify(w.options?.response),
+              defaultValue: JSON.stringify(w.options?.defaultValue),
+              signUrl: !!w.SignUrl,
+              readOnly: !!w.options?.isReadOnly
+            }))
+          )
+        );
+      }
       const editableWidgets = (widgetsPosition?.placeHolder ?? []).flatMap(
         ({ pos = [], pageNumber }) =>
           pos
