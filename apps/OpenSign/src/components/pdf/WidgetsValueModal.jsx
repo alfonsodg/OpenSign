@@ -1912,8 +1912,8 @@ function WidgetsValueModal(props) {
     } else if (!isSave) {
       const widgetsPosition = xyPosition?.find((data) => data.Id === uniqueId);
       let nextWidgetDetails = null;
-      if (window.__NEXT_DEBUG__) {
-        console.table(
+      {
+        console.warn("[NEXTDBG]"); console.table(
           (widgetsPosition?.placeHolder ?? []).flatMap(({ pos = [] }) =>
             pos.map((w) => ({
               key: w.key,
@@ -2053,8 +2053,8 @@ function WidgetsValueModal(props) {
         })
         .map((widget) => ({ ...widget, pageNumber: page.pageNumber }))
     );
-    if (window.__NEXT_DEBUG__) {
-      console.table(
+    {
+      console.warn("[NEXTDBG]"); console.table(
         (editableWidgets || []).map((w) => ({
           key: w.key,
           type: w.type,
