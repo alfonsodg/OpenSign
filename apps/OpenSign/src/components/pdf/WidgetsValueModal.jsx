@@ -2049,10 +2049,21 @@ function WidgetsValueModal(props) {
       page.pos
         .filter((widget) => {
           if (widget.options?.isReadOnly) return false;
-          return true; // ← outside ee block
+          return true; // every readable widget counts for the finish check
         })
         .map((widget) => ({ ...widget, pageNumber: page.pageNumber }))
     );
+    if (window.__NEXT_DEBUG__) {
+      console.table(
+        (editableWidgets || []).map((w) => ({
+          key: w.key,
+          type: w.type,
+          response: JSON.stringify(w.options?.response),
+          defaultValue: JSON.stringify(w.options?.defaultValue),
+          signUrl: !!w.SignUrl
+        }))
+      );
+    }
     const getcurrentwidget = editableWidgets?.find(
       (data) => data?.key === currWidgetsDetails?.key
     );
