@@ -1913,7 +1913,7 @@ function WidgetsValueModal(props) {
       const widgetsPosition = xyPosition?.find((data) => data.Id === uniqueId);
       let nextWidgetDetails = null;
       {
-        console.warn("[NEXTDBG]"); console.table(
+        window.__NEXT_STATE__ = (
           (widgetsPosition?.placeHolder ?? []).flatMap(({ pos = [] }) =>
             pos.map((w) => ({
               key: w.key,
@@ -2054,7 +2054,7 @@ function WidgetsValueModal(props) {
         .map((widget) => ({ ...widget, pageNumber: page.pageNumber }))
     );
     {
-      console.warn("[NEXTDBG]"); console.table(
+      window.__NEXT_STATE__ = (
         (editableWidgets || []).map((w) => ({
           key: w.key,
           type: w.type,
