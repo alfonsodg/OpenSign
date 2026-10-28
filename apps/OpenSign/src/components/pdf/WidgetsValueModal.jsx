@@ -1607,7 +1607,12 @@ function WidgetsValueModal(props) {
                   onChange={handleOnDateChange}
                   popperPlacement="top-start"
                   popperModifiers={[
-                    { name: "offset", options: { offset: [-16, 8] } }
+                    { name: "offset", options: { offset: [-32, 8] } },
+                    {
+                      name: "preventOverflow",
+                      options: { padding: 12, altAxis: true }
+                    },
+                    { name: "flip", options: { padding: 12 } }
                   ]}
                   customInput={<ExampleCustomInput />}
                   dateFormat={
