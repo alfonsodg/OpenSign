@@ -1605,7 +1605,10 @@ function WidgetsValueModal(props) {
                   closeOnScroll
                   selected={startDate}
                   onChange={handleOnDateChange}
-                  popperPlacement="top-end"
+                  popperPlacement="top-start"
+                  popperModifiers={[
+                    { name: "offset", options: { offset: [-16, 8] } }
+                  ]}
                   customInput={<ExampleCustomInput />}
                   dateFormat={
                     selectDate?.format ||
@@ -1903,11 +1906,13 @@ function WidgetsValueModal(props) {
         ({ pos = [], pageNumber }) =>
           pos
             .filter(({ options, key, type }) => {
-              if (
-                options?.isReadOnly
-              )
-                return false;
-              return true; // ← must be OUTSIDE the ee block
+              if (options?.isReadOnly) return false;
+              // Only fields that still need a value: filled ones are skipped
+              // so "next" walks through what is actually pending.
+              const value = options?.response;
+              if (Array.isArray(value)) return value.filter(Boolean).length === 0;
+              if (typeof value === "string") return value.trim() === "";
+              return value == null;
             })
             .map((widget) => ({ widget, pageNumber }))
       );

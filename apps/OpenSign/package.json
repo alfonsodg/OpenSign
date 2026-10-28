@@ -1,6 +1,6 @@
 {
   "name": "open_sign",
-  "version": "2.37.2",
+  "version": "2.37.3",
   "private": true,
   "dependencies": {
     "@eid-easy/eideasy-widget": "^3.17.3",

@@ -882,6 +882,10 @@ case "job title":
                 );
               }}
               dateFormat={momentFormat}
+              popperPlacement="bottom-start"
+              popperModifiers={[
+                { name: "offset", options: { offset: [0, 6] } }
+              ]}
               customInput={
                 <input
                   style={{ fontSize: fontSize, color: fontColor }}
