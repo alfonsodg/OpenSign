@@ -1882,6 +1882,9 @@ function WidgetsValueModal(props) {
 
   //function too use on click on next/finish button then update modal UI according to current widgets
   const handleClickOnNext = async (isFinishDoc) => {
+    window.__TRACE__ = (window.__TRACE__ || []).concat(
+      "handleClickOnNext(isSave=" + isSave + ",isFinishDoc=" + isFinishDoc + ")"
+    );
     if (
       ["signature", "stamp", "image", "initials", drawWidget].includes(
         currWidgetsDetails?.type
@@ -2042,6 +2045,7 @@ function WidgetsValueModal(props) {
   }, [isSave]);
   //'handleFinishButton' function is used to show finish button click on any widget if all required widgets have response
   const handleFinishButton = () => {
+    window.__TRACE__ = (window.__TRACE__ || []).concat("handleFinishButton");
     const widgetsPosition = xyPosition?.find((data) => data.Id === uniqueId);
 
     //using 'flatMap' create all nested array in one level
