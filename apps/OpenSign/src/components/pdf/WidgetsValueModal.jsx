@@ -1910,13 +1910,16 @@ function WidgetsValueModal(props) {
       const editableWidgets = (widgetsPosition?.placeHolder ?? []).flatMap(
         ({ pos = [], pageNumber }) =>
           pos
-            .filter(({ options, key, type }) => {
+            .filter(({ options, key, type, SignUrl }) => {
               if (options?.isReadOnly) return false;
-              // Only fields that still need a value: filled ones are skipped
-              // so "next" walks through what is actually pending.
+              // Only pending fields. A checked checkbox stores [0], where 0 is
+              // a valid index, so array length decides. SignUrl covers the
+              // signature family and images.
+              if (SignUrl) return false;
               const value = options?.response;
-              if (Array.isArray(value)) return value.filter(Boolean).length === 0;
+              if (Array.isArray(value)) return value.length === 0;
               if (typeof value === "string") return value.trim() === "";
+              if (typeof value === "number") return false;
               return value == null;
             })
             .map((widget) => ({ widget, pageNumber }))

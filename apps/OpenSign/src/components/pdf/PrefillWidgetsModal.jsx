@@ -158,11 +158,14 @@ function PrefillWidgetModal(props) {
         page.pos
           .filter((widget) => {
             if (widget.options?.isReadOnly) return false;
-            // Only pending fields: anything already answered is skipped so
-            // "next" walks the empty ones.
+            // Only pending fields. A checked checkbox stores [0], where 0 is a
+            // valid option index, so array length decides, not truthiness.
+            // Signature, stamp, initials and image keep their value in SignUrl.
+            if (widget.SignUrl) return false;
             const value = widget.options?.response;
-            if (Array.isArray(value)) return value.filter(Boolean).length === 0;
+            if (Array.isArray(value)) return value.length === 0;
             if (typeof value === "string") return value.trim() === "";
+            if (typeof value === "number") return false;
             return value == null;
           })
           .map((widget) => ({
