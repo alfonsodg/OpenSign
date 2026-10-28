@@ -156,7 +156,15 @@ function PrefillWidgetModal(props) {
     const flatArray = filteredArray
       ?.flatMap((page) =>
         page.pos
-          .filter((widget) => !widget.options?.isReadOnly)
+          .filter((widget) => {
+            if (widget.options?.isReadOnly) return false;
+            // Only pending fields: anything already answered is skipped so
+            // "next" walks the empty ones.
+            const value = widget.options?.response;
+            if (Array.isArray(value)) return value.filter(Boolean).length === 0;
+            if (typeof value === "string") return value.trim() === "";
+            return value == null;
+          })
           .map((widget) => ({
             widget,
             pageNumber: page.pageNumber,
