@@ -1605,12 +1605,17 @@ function WidgetsValueModal(props) {
                   closeOnScroll
                   selected={startDate}
                   onChange={handleOnDateChange}
-                  popperPlacement="top-start"
+                  popperPlacement="top-end"
                   popperModifiers={[
-                    { name: "offset", options: { offset: [-32, 8] } },
+                    { name: "offset", options: { offset: [0, 8] } },
                     {
                       name: "preventOverflow",
-                      options: { padding: 12, altAxis: true }
+                      options: {
+                        boundary: "viewport",
+                        rootBoundary: "document",
+                        padding: 12,
+                        altAxis: true
+                      }
                     },
                     { name: "flip", options: { padding: 12 } }
                   ]}

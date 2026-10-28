@@ -882,12 +882,17 @@ case "job title":
                 );
               }}
               dateFormat={momentFormat}
-              popperPlacement="bottom-start"
+              popperPlacement="bottom-end"
               popperModifiers={[
-                { name: "offset", options: { offset: [-32, 6] } },
+                { name: "offset", options: { offset: [0, 6] } },
                 {
                   name: "preventOverflow",
-                  options: { padding: 12, altAxis: true }
+                  options: {
+                    boundary: "viewport",
+                    rootBoundary: "document",
+                    padding: 12,
+                    altAxis: true
+                  }
                 },
                 { name: "flip", options: { padding: 12 } }
               ]}
