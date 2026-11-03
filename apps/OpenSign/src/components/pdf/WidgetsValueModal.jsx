@@ -1625,7 +1625,6 @@ function WidgetsValueModal(props) {
                     currWidgetsDetails?.options?.validation?.format ||
                     "MM/dd/yyyy"
                   }
-                  portalId="root-portal"
                 />
               </div>
               {/* Format */}

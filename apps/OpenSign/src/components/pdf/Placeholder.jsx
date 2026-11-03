@@ -1276,7 +1276,7 @@ function Placeholder(props) {
                             ? props.pos?.options?.validation?.format
                             : "MM/dd/yyyy"
                       }
-                      portalId="root-portal"
+                      
                     />
                     <label className="flex items-center gap-1 cursor-pointer mb-0">
                       <input
