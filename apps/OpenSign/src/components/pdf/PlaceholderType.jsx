@@ -564,6 +564,20 @@ function PlaceholderType(props) {
                 );
               }}
               dateFormat={momentFormat}
+              popperPlacement="bottom-end"
+              popperModifiers={[
+                { name: "offset", options: { offset: [0, 6] } },
+                {
+                  name: "preventOverflow",
+                  options: {
+                    boundary: "viewport",
+                    rootBoundary: "document",
+                    padding: 12,
+                    altAxis: true
+                  }
+                },
+                { name: "flip", options: { padding: 12 } }
+              ]}
               customInput={
                 <input
                   style={{ fontSize: fontSize, color: fontColor }}
