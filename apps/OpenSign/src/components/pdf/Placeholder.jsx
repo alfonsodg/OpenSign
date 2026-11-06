@@ -259,7 +259,24 @@ function Placeholder(props) {
             props.setXyPosition(updatesignerPos);
           }
           props?.closeWidgetTour?.();
-          dispatch(setIsShowModal({ [props.pos.key]: true }));
+          // Inline editing: text widgets are edited in-field; only open the
+          // modal for non-text widgets (signature, image, stamp, etc.).
+          // Types edited in place. Signature, stamp, initials and image stay
+          // on the modal because they need a drawing pad or a file picker.
+          const inlineTypes = [
+            "text",
+            textInputWidget,
+            "name",
+            "company",
+            "job title",
+            "email",
+            "checkbox",
+            radioButtonWidget,
+            "dropdown"
+          ];
+          if (!inlineTypes.includes(props.pos.type)) {
+            dispatch(setIsShowModal({ [props.pos.key]: true }));
+          }
       }
     }
     //placeholder, template flow
