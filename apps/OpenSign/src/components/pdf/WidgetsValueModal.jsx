@@ -1551,13 +1551,25 @@ function WidgetsValueModal(props) {
                   selected={startDate}
                   onChange={handleOnDateChange}
                   popperPlacement="top-end"
+                  popperModifiers={[
+                    { name: "offset", options: { offset: [0, 6] } },
+                    {
+                  name: "preventOverflow",
+                  options: {
+                    boundary: "viewport",
+                    rootBoundary: "document",
+                    padding: 12,
+                    altAxis: true
+                  }
+                    },
+                    { name: "flip", options: { padding: 12 } }
+              ]}
                   customInput={<ExampleCustomInput />}
                   dateFormat={
                     selectDate?.format ||
                     currWidgetsDetails?.options?.validation?.format ||
                     "MM/dd/yyyy"
                   }
-                  portalId="root-portal"
                 />
               </div>
               {/* Format */}
