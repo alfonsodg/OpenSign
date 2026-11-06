@@ -2,7 +2,7 @@ import axios from 'axios';
 import { google } from 'googleapis';
 import fs from 'node:fs';
 import https from 'https';
-import { logger } from '../../utils/logger.js';
+import { normalizeMailSubject } from '../../Utils.js';
 const clientId = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 // Function to create a Gmail client
@@ -34,7 +34,7 @@ const getGmail = async (access_token, displayName) => {
     const gmail = res.data.email;
     return `${displayName} <${gmail}>`;
   } catch (err) {
-    logger.info('gmail retrive error ', err);
+    console.log('gmail retrive error ', err);
     return displayName;
   }
 };
@@ -87,7 +87,7 @@ const makeEmail = async (
               Pdf.on('error', () => resolve('error'));
             })
             .on('error', e => {
-              logger.error(`error: ${e.message}`);
+              console.error(`error: ${e.message}`);
               resolve('error');
             });
         } else {
@@ -100,7 +100,7 @@ const makeEmail = async (
               Pdf.on('error', () => resolve('error'));
             })
             .catch(e => {
-              logger.info('error', e.message);
+              console.log('error', e.message);
               resolve('error');
             });
         }
@@ -129,7 +129,7 @@ const makeEmail = async (
         }
       } catch (err) {
         attachments = [file];
-        logger.info('sendMailGmailProvider read certificate error', err);
+        console.log('sendMailGmailProvider read certificate error', err);
       }
     }
     const attachmentParts = attachments.map(attachment => {
@@ -154,7 +154,7 @@ const makeEmail = async (
       bccHeader,
       ccHeader,
       replyToHeader,
-      `Subject: ${subject}\n\n`,
+      `Subject: ${normalizeMailSubject(subject)}\n\n`,
       '--' + boundary + '\n',
       'Content-Type: text/html; charset="UTF-8"\n',
       'MIME-Version: 1.0\n\n',
@@ -172,7 +172,7 @@ const makeEmail = async (
       bccHeader,
       ccHeader,
       replyToHeader,
-      `Subject: ${subject}\n\n`,
+      `Subject: ${normalizeMailSubject(subject)}\n\n`,
       '--' + boundary + '\n',
       'Content-Type: text/html; charset="UTF-8"\n',
       'MIME-Version: 1.0\n\n',
@@ -233,26 +233,26 @@ export default async function sendMailGmailProvider(_extRes, template) {
         userId: 'me',
         requestBody: { raw: email },
       });
-      logger.info('gmail provider res: ', response?.status);
+      console.log('gmail provider res: ', response?.status);
       const certificatepath = certificatePath || './exports/certificate.pdf';
       if (fs.existsSync(certificatepath)) {
         try {
           fs.unlinkSync(certificatepath);
         } catch (err) {
-          logger.info('Err in unlink certificate sendmailgmail provider');
+          console.log('Err in unlink certificate sendmailgmail provider');
         }
       }
       if (fs.existsSync(testPdf)) {
         try {
           fs.unlinkSync(testPdf);
         } catch (err) {
-          logger.info('sendMailGmailProvider unlink pdf error');
+          console.log('sendMailGmailProvider unlink pdf error');
         }
       }
       return { code: 200, message: 'Email sent successfully' };
     } catch (error) {
       const message = error?.response?.data || error?.message || 'Unknown error';
-      logger.error('Error sending email:', message);
+      console.error('Error sending email:', message);
       return { code: 500, message: 'Failed to send email ' + error };
     }
   }

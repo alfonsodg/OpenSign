@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { lazyWithRetry, hideUpgradeProgress } from "./utils";
-import { Routes, Route, BrowserRouter } from "react-router";
-import { getEnv } from "./constant/Utils";
+import { Routes, Route, BrowserRouter, Navigate } from "react-router";
 import { pdfjs } from "react-pdf";
 import Form from "./pages/Form";
 import Report from "./pages/Report";
 import Dashboard from "./pages/Dashboard";
 import HomeLayout from "./layout/HomeLayout";
 import PageNotFound from "./pages/PageNotFound";
-import ErrorBoundary from "./primitives/ErrorBoundary";
 import ValidateRoute from "./primitives/ValidateRoute";
 import Validate from "./primitives/Validate";
 import TemplatePlaceholder from "./pages/TemplatePlaceholder";
@@ -23,6 +21,11 @@ import { serverUrl_fn } from "./constant/appinfo";
 import DocSuccessPage from "./pages/DocSuccessPage";
 import DragProvider from "./components/DragProivder";
 import Title from "./components/Title";
+import LocalQaTranslations from "./qa/LocalQaTranslations";
+import {
+  isLocalQaIdentityEnabled,
+  LOCAL_QA_DASHBOARD_ID
+} from "./qa/localQaIdentity";
 const DebugPdf = lazyWithRetry(() => import("./pages/DebugPdf"));
 const ForgetPassword = lazyWithRetry(() => import("./pages/ForgetPassword"));
 const GuestLogin = lazyWithRetry(() => import("./pages/GuestLogin"));
@@ -64,21 +67,24 @@ function App() {
       {isloading ? (
         <AppLoader />
       ) : (
-        <BrowserRouter basename={(() => {
-          try {
-            const raw = getEnv()?.PUBLIC_URL || process.env.PUBLIC_URL;
-            if (raw) {
-              const u = new URL(raw, window.location.origin);
-              return u.pathname.replace(/\/$/, "") || "/";
-            }
-          } catch (e) { /* ignore */ }
-          return "/";
-        })()}>
+        <BrowserRouter>
           <Title />
-          <ErrorBoundary>
           <Routes>
             <Route element={<ValidateRoute />}>
-              <Route exact path="/" element={<Lazy Page={Login} />} />
+              <Route
+                exact
+                path="/"
+                element={
+                  isLocalQaIdentityEnabled() ? (
+                    <Navigate
+                      to={`/dashboard/${LOCAL_QA_DASHBOARD_ID}`}
+                      replace
+                    />
+                  ) : (
+                    <Lazy Page={Login} />
+                  )
+                }
+              />
                   <Route path="/addadmin" element={<Lazy Page={AddAdmin} />} />
                   <Route
                     path="/upgrade-2.1"
@@ -102,6 +108,12 @@ function App() {
                 element={<Lazy Page={ForgetPassword} />}
               />
             <Route element={<HomeLayout />}>
+              {isLocalQaIdentityEnabled() && (
+                <Route
+                  path="/local-qa/translations"
+                  element={<LocalQaTranslations />}
+                />
+              )}
                   <Route path="/users" element={<UserList />} />
                   <Route
                     path="/changepassword"
@@ -154,7 +166,6 @@ function App() {
             <Route path="/emailbuilder" element={<EmailBuilder />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
-          </ErrorBoundary>
         </BrowserRouter>
       )}
     </div>

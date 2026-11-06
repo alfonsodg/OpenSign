@@ -2,18 +2,17 @@ import fs from 'node:fs';
 import https from 'https';
 import formData from 'form-data';
 import Mailgun from 'mailgun.js';
-import { smtpenable, smtpsecure, updateMailCount } from '../../Utils.js';
+import { smtpenable, smtpsecure, normalizeMailSubject, updateMailCount } from '../../Utils.js';
 import { renderComplaintFooter, resolveBrandContext } from '../../utils/brandContext.js';
 import { createTransport } from 'nodemailer';
 import axios from 'axios';
-import { logger } from '../../utils/logger.js';
 
 function safeUnlink(filePath, label = 'file') {
   if (fs.existsSync(filePath)) {
     try {
       fs.unlinkSync(filePath);
     } catch (err) {
-      logger.info(`sendMailWithAttachment unlink ${label} error`);
+      console.log(`sendMailWithAttachment unlink ${label} error`);
     }
   }
 }
@@ -36,12 +35,12 @@ async function sendMailProvider(params) {
       };
 
       // ✅ Add auth only if BOTH username & password exist
-      const smtpUser = process.env.SMTP_USERNAME || process.env.SMTP_USER;
-      const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+      const smtpUser = process.env.SMTP_USERNAME;
+      const smtpPass = process.env.SMTP_PASS;
 
       if (smtpUser && smtpPass) {
         transporterConfig.auth = {
-          user: process.env.SMTP_USERNAME || process.env.SMTP_USER || process.env.SMTP_USER_EMAIL,
+          user: process.env.SMTP_USERNAME ? process.env.SMTP_USERNAME : process.env.SMTP_USER_EMAIL,
           pass: smtpPass,
         };
       }
@@ -64,26 +63,13 @@ async function sendMailProvider(params) {
               new URL(params.url)?.protocol === 'https:' &&
               new URL(params.url)?.hostname !== 'localhost';
             if (isSecure) {
-https
-                 .get(params.url, async function (response) {
-                   if (response.statusCode !== 200) {
-                     Pdf.destroy();
-                     resolve('error');
-                     return;
-                   }
-                   response.pipe(Pdf);
-                   Pdf.on('finish', () => resolve('success'));
-                   Pdf.on('error', e => {
-                     logger.error(`error: ${e.message}`);
-                     resolve('error');
-                   });
-                   response.on('error', e => {
-                     logger.error(`error: ${e.message}`);
-                     resolve('error');
-                   });
-                 })
+              https
+                .get(params.url, async function (response) {
+                  response.pipe(Pdf);
+                  response.on('end', () => resolve('success'));
+                })
                 .on('error', e => {
-                  logger.error(`error: ${e.message}`);
+                  console.error(`error: ${e.message}`);
                   resolve('error');
                 });
             } else {
@@ -101,7 +87,7 @@ https
                   Pdf.on('error', () => resolve('error'));
                 })
                 .catch(e => {
-                  logger.info('error in localurl', e.message);
+                  console.log('error in localurl', e.message);
                   resolve('error');
                 });
             }
@@ -109,19 +95,17 @@ https
         };
         // `writeToLocalDisk` is used to create pdf file from doc url
         const ress = await writeToLocalDisk();
-        if (ress === 'success') {
+        if (ress) {
+          function readTolocal() {
+            return new Promise((resolve, reject) => {
+              setTimeout(() => {
+                let PdfBuffer = fs.readFileSync(Pdf.path);
+                resolve(PdfBuffer);
+              }, 100);
+            });
+          }
           //  `PdfBuffer` used to create buffer from pdf file
-          let PdfBuffer;
-          try {
-            PdfBuffer = fs.readFileSync(Pdf.path);
-          } catch (e) {
-            safeUnlink(testPdf, 'pdf');
-            return { status: 'error' };
-          }
-          if (!PdfBuffer || PdfBuffer.length === 0) {
-            safeUnlink(testPdf, 'pdf');
-            return { status: 'error' };
-          }
+          let PdfBuffer = await readTolocal();
           const pdfName = params.pdfName && `${params.pdfName}.pdf`;
           const filename = params.filename;
           const file = {
@@ -132,36 +116,31 @@ https
 
           let attachment;
           const certificatePath = params.certificatePath || `./exports/certificate.pdf`;
-          let certificateBuffer = null;
           if (fs.existsSync(certificatePath)) {
             try {
-              const stat = fs.statSync(certificatePath);
-              if (stat.size > 0) {
-                certificateBuffer = fs.readFileSync(certificatePath);
-              }
+              //  `certificateBuffer` used to create buffer from pdf file
+              const certificateBuffer = fs.readFileSync(certificatePath);
+              const certificate = {
+                filename: 'certificate.pdf',
+                content: smtpenable ? certificateBuffer : undefined, //fs.readFileSync('./exports/exported_file_1223.pdf'),
+                data: smtpenable ? undefined : certificateBuffer,
+              };
+              attachment = [file, certificate];
             } catch (err) {
-              logger.info('sendMailWithAttachment read certificate error', err);
+              attachment = [file];
+              console.log('sendMailWithAttachment read certificate error', err);
             }
-          }
-          if (certificateBuffer && certificateBuffer.length > 0) {
-            const certificate = {
-              filename: 'certificate.pdf',
-              content: smtpenable ? certificateBuffer : undefined,
-              data: smtpenable ? undefined : certificateBuffer,
-            };
-            attachment = [file, certificate];
           } else {
             attachment = [file];
           }
           const from = params.from || '';
           const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
-          const displayName = from && !String(from).includes('@') ? from : appName;
           const replyto = params?.replyto || '';
           const messageParams = {
-            from: displayName + ' <' + mailsender + '>',
+            from: from + ' <' + mailsender + '>',
             to: params.recipient,
-            subject: params.subject,
-            text: params.text || stripHtml(params?.html) || 'mail',
+            subject: normalizeMailSubject(params.subject),
+            text: params.text || 'mail',
             html: params?.html ? params.html + reportMsg : '',
             attachments: smtpenable ? attachment : undefined,
             attachment: smtpenable ? undefined : attachment,
@@ -175,7 +154,7 @@ https
           ];
           if (transporterSMTP) {
             const res = await transporterSMTP.sendMail(messageParams);
-            logger.info('smtp transporter res: ', res?.response);
+            console.log('smtp transporter res: ', res?.response);
             if (!res.err) {
               if (extUserId) {
                 await updateMailCount(extUserId);
@@ -187,7 +166,7 @@ https
           } else {
             if (mailgunApiKey) {
               const res = await mailgunClient.messages.create(mailgunDomain, messageParams);
-              logger.info('mailgun res: ', res?.status);
+              console.log('mailgun res: ', res?.status);
               if (res.status === 200) {
                 if (extUserId) {
                   await updateMailCount(extUserId);
@@ -202,20 +181,19 @@ https
           }
         }
       } catch (err) {
-        logger.info(`sendMailWithAttachment error: ${err}`);
+        console.log(`sendMailWithAttachment error: ${err}`);
         safeUnlink(testPdf, 'testPdf');
         if (err) return { status: 'error' };
       }
     } else {
       const from = params.from || '';
       const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
-      const displayName = from && !String(from).includes('@') ? from : appName;
       const replyto = params?.replyto || '';
       const messageParams = {
-        from: displayName + ' <' + mailsender + '>',
+        from: from + ' <' + mailsender + '>',
         to: params.recipient,
-        subject: params.subject,
-        text: params.text || stripHtml(params?.html) || 'mail',
+        subject: normalizeMailSubject(params.subject),
+        text: params.text || 'mail',
         html: params?.html ? params.html + reportMsg : '',
         bcc: params.bcc ? params.bcc : undefined,
         cc: params.cc ? params.cc : undefined,
@@ -224,7 +202,7 @@ https
 
       if (transporterSMTP) {
         const res = await transporterSMTP.sendMail(messageParams);
-        logger.info('smtp transporter res: ', res?.response);
+        console.log('smtp transporter res: ', res?.response);
         if (!res.err) {
           if (extUserId) {
             await updateMailCount(extUserId);
@@ -234,7 +212,7 @@ https
       } else {
         if (mailgunApiKey) {
           const res = await mailgunClient.messages.create(mailgunDomain, messageParams);
-          logger.info('mailgun res: ', res?.status);
+          console.log('mailgun res: ', res?.status);
           if (res.status === 200) {
             if (extUserId) {
               await updateMailCount(extUserId);
@@ -247,7 +225,7 @@ https
       }
     }
   } catch (err) {
-    logger.info(`sendMailWithAttachment Error: ${err}`);
+    console.log(`sendMailWithAttachment Error: ${err}`);
     if (err) {
       return { status: 'error' };
     }

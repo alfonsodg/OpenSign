@@ -8,7 +8,7 @@ export default async function updateTourStatus(request) {
       const updateUser = new Parse.Object('contracts_Users');
       updateUser.id = extUserId;
       updateUser.set('TourStatus', tourstatus);
-      const res = await updateUser.save();
+      const res = await updateUser.save(null, { sessionToken: request.user.getSessionToken() });
       return res;
     } catch (err) {
       logger.info('Err ', err);

@@ -2,49 +2,20 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
 import { resolve } from "path";
-import fs from "fs";
-import path from "path";
+import { localQaApiPlugin } from "./qa/localQaApi.mjs";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  // Load ALL env vars (no prefix filter). Also load .env.prod (deploy artifact) if present.
+export default defineConfig(({ mode, command }) => {
+  // Load ALL env vars (no prefix filter)
   const env = loadEnv(mode, process.cwd(), "");
-  try {
-    const prodPath = path.resolve(process.cwd(), ".env.prod");
-    if (fs.existsSync(prodPath)) {
-      const content = fs.readFileSync(prodPath, "utf8");
-      for (const line of content.split(/\r?\n/)) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith("#")) continue;
-        const idx = trimmed.indexOf("=");
-        if (idx < 0) continue;
-        const key = trimmed.slice(0, idx).trim();
-        const value = trimmed.slice(idx + 1).trim();
-        if (key && !(key in env)) env[key] = value;
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  // Normalize PUBLIC_URL into a base path for Vite
-  let basePath = "/";
-  try {
-    const raw = env.PUBLIC_URL || process.env.PUBLIC_URL;
-    if (raw) {
-      const u = new URL(raw, "http://localhost");
-      basePath = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
-    }
-  } catch (e) {
-    // ignore
-  }
+  const localQaMode = mode === "local-qa" && command === "serve";
 
   return {
     plugins: [
       react(),
-      svgr() // Transform SVGs into React components
+      svgr(), // Transform SVGs into React components
+      ...(localQaMode ? [localQaApiPlugin()] : [])
     ],
-    base: basePath,
     resolve: { alias: {} }, // Add any necessary aliases here
     define: {
       // Replace process.env.REACT_APP_* with import.meta.env.VITE_*
@@ -66,7 +37,10 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: env.PORT || 3000, // Same port as CRA
-      open: true
+      open: true,
+      ...(localQaMode
+        ? { allowedHosts: ["localhost", "127.0.0.1", "::1"] }
+        : {})
     }
   };
 });

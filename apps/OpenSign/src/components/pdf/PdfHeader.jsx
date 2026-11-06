@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import WidgetHistoryControls from "./WidgetHistoryControls";
 import PrevNext from "./PrevNext";
 import {
   base64ToArrayBuffer,
@@ -19,7 +20,6 @@ import Loader from "../../primitives/Loader";
 import PageReorderModal from "./PageReorderModal";
 import { useTranslation } from "react-i18next";
 import { PDFDocument } from "pdf-lib";
-import { useNavigate } from "react-router";
 import { maxFileSize } from "../../constant/const";
 import { useWindowSize } from "../../hook/useWindowSize";
 
@@ -31,19 +31,17 @@ function Header(props) {
   const [isDeletePage, setIsDeletePage] = useState(false);
   const [isReorderModal, setIsReorderModal] = useState(false);
   const mergePdfInputRef = useRef(null);
-  const navigate = useNavigate();
-  // `history.go(-2)` is a no-op when the editor is opened directly (a reload,
-  // a bookmark or a new tab leaves history.length === 2), so the back control
-  // appeared to freeze on the template. Walk back only when there is an
-  // in-app entry to return to, otherwise fall back to the dashboard.
-  const handleBack = () => {
-    const idx = window.history.state && window.history.state.idx;
-    if (typeof idx === "number" && idx > 0) {
-      navigate(-1);
-    } else {
-      navigate("/");
-    }
-  };
+  const clearWidgetHistory = props.widgetHistory?.clear;
+  useEffect(() => {
+    clearWidgetHistory?.();
+  }, [props.pdfArrayBuffer, clearWidgetHistory]);
+  const widgetHistoryControls = props.widgetHistory &&
+    !props.isCompleted &&
+    !props.alreadySign &&
+    !props.isSigned &&
+    !props.isMailSend && (
+      <WidgetHistoryControls history={props.widgetHistory} />
+    );
   const enabledBackBtn = props?.disabledBackBtn === true ? false : true;
   const isViewerSigner = false;
   const finishLabel = t("finish");
@@ -142,7 +140,7 @@ function Header(props) {
       const uploadedPdfDoc = await PDFDocument.load(uploadedPdfBytes, {
         ignoreEncryption: true
       });
-      const basePdfDoc = await PDFDocument.load(props.pdfArrayBuffer, { ignoreEncryption: true });
+      const basePdfDoc = await PDFDocument.load(props.pdfArrayBuffer);
 
       // Copy pages from the uploaded PDF to the base PDF
       const uploadedPdfPages = await basePdfDoc.copyPages(
@@ -408,6 +406,16 @@ function Header(props) {
                           </DropdownMenu.Item>
                           {!props?.isDisablePdfEditTools && (
                             <>
+                              {props.widgetHistory &&
+                                !props.isCompleted &&
+                                !props.alreadySign &&
+                                !props.isSigned &&
+                                !props.isMailSend && (
+                                  <WidgetHistoryControls
+                                    history={props.widgetHistory}
+                                    asMenuItems
+                                  />
+                                )}
                               <DropdownMenu.Item
                                 className="DropdownMenuItem"
                                 onClick={() => mergePdfInputRef.current.click()}
@@ -511,12 +519,13 @@ function Header(props) {
             props?.isPlaceholder ? "os-pdf-header-placeholder" : ""
           } flex flex-wrap justify-between items-center w-full gap-y-1 ml-1`}
         >
-          <div className="os-pdf-header-pages">
+          <div className="os-pdf-header-pages flex items-center gap-1">
             <PrevNext
               pageNumber={props?.pageNumber}
               allPages={props?.allPages}
               changePage={props?.changePage}
             />
+            <div className="hidden">{widgetHistoryControls}</div>
           </div>
           {props?.isPlaceholder ? (
             <>
@@ -534,7 +543,7 @@ function Header(props) {
                 )}
                 {enabledBackBtn && (
                   <button
-                    onClick={() => handleBack()}
+                    onClick={() => window.history.go(-2)}
                     type="button"
                     className="os-pdf-header-action op-btn op-btn-ghost text-base-content op-btn-sm"
                   >
@@ -712,7 +721,7 @@ function Header(props) {
           ) : (
             <div className="flex">
               <button
-                onClick={() => handleBack()}
+                onClick={() => window.history.go(-2)}
                 type="button"
                 className="op-btn op-btn-ghost text-base-content op-btn-sm mr-[3px]"
               >

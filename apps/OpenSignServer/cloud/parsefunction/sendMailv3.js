@@ -1,9 +1,8 @@
 import formData from 'form-data';
 import Mailgun from 'mailgun.js';
-import { smtpenable, smtpsecure, updateMailCount } from '../../Utils.js';
+import { smtpenable, smtpsecure, normalizeMailSubject, updateMailCount } from '../../Utils.js';
 import { renderComplaintFooter, resolveBrandContext } from '../../utils/brandContext.js';
 import { createTransport } from 'nodemailer';
-import { logger } from '../../utils/logger.js';
 async function sendMailProvider(req) {
   const brand = resolveBrandContext({});
   const extUserId = req.params?.extUserId || '';
@@ -23,12 +22,12 @@ async function sendMailProvider(req) {
       };
 
       // ✅ Add auth only if BOTH username & password exist
-      const smtpUser = process.env.SMTP_USERNAME || process.env.SMTP_USER;
-      const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+      const smtpUser = process.env.SMTP_USERNAME;
+      const smtpPass = process.env.SMTP_PASS;
 
       if (smtpUser && smtpPass) {
         transporterConfig.auth = {
-          user: process.env.SMTP_USERNAME || process.env.SMTP_USER || process.env.SMTP_USER_EMAIL,
+          user: process.env.SMTP_USERNAME ? process.env.SMTP_USERNAME : process.env.SMTP_USER_EMAIL,
           pass: smtpPass,
         };
       }
@@ -43,13 +42,12 @@ async function sendMailProvider(req) {
 
     const from = req.params.from || '';
     const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
-    const displayName = from && !String(from).includes('@') ? from : appName;
     const replyto = req.params?.replyto || '';
     const messageParams = {
-      from: displayName + ' <' + mailsender + '>',
+      from: from + ' <' + mailsender + '>',
       to: req.params.recipient,
-      subject: req.params.subject,
-      text: req.params.text || stripHtml(req.params?.html) || 'mail',
+      subject: normalizeMailSubject(req.params.subject),
+      text: req.params.text || 'mail',
       html: req.params?.html ? req.params.html + reportMsg : '',
       bcc: req.params.bcc ? req.params.bcc : undefined,
       cc: req.params.cc ? req.params.cc : undefined,
@@ -58,7 +56,7 @@ async function sendMailProvider(req) {
 
     if (transporterSMTP) {
       const res = await transporterSMTP.sendMail(messageParams);
-      logger.info('smtp transporter res: ', res?.response);
+      console.log('smtp transporter res: ', res?.response);
       if (!res.err) {
         if (extUserId) {
           await updateMailCount(extUserId);
@@ -68,7 +66,7 @@ async function sendMailProvider(req) {
     } else {
       if (mailgunApiKey) {
         const res = await mailgunClient.messages.create(mailgunDomain, messageParams);
-        logger.info('mailgun res: ', res?.status);
+        console.log('mailgun res: ', res?.status);
         if (res.status === 200) {
           if (extUserId) {
             await updateMailCount(extUserId);
@@ -80,7 +78,7 @@ async function sendMailProvider(req) {
       }
     }
   } catch (err) {
-    logger.info(`sendmailv3 Error: ${err}`);
+    console.log(`sendmailv3 Error: ${err}`);
     if (err) {
       return { status: 'error' };
     }
