@@ -210,7 +210,11 @@ function Header(props) {
               type="button"
               aria-label={t("back")}
               className="min-h-[44px] min-w-[44px]"
-              onClick={() => window.history.go(-2)}
+              onClick={() =>
+                  window.history.state?.idx > 0
+                    ? window.history.back()
+                    : (window.location.href = "/")
+                }
             >
               <i
                 className="fa-light fa-arrow-left text-base-content"
@@ -543,7 +547,11 @@ function Header(props) {
                 )}
                 {enabledBackBtn && (
                   <button
-                    onClick={() => window.history.go(-2)}
+                    onClick={() =>
+                  window.history.state?.idx > 0
+                    ? window.history.back()
+                    : (window.location.href = "/")
+                }
                     type="button"
                     className="os-pdf-header-action op-btn op-btn-ghost text-base-content op-btn-sm"
                   >
@@ -721,7 +729,11 @@ function Header(props) {
           ) : (
             <div className="flex">
               <button
-                onClick={() => window.history.go(-2)}
+                onClick={() =>
+                  window.history.state?.idx > 0
+                    ? window.history.back()
+                    : (window.location.href = "/")
+                }
                 type="button"
                 className="op-btn op-btn-ghost text-base-content op-btn-sm mr-[3px]"
               >
