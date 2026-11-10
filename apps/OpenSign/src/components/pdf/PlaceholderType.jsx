@@ -402,10 +402,31 @@ function PlaceholderType(props) {
             fontSize: fontSize,
             color: fontColor,
             background: isReadOnly ? props.data?.blockColor : "white",
-            pointerEvents: "none"
+            pointerEvents: canEditInline ? "auto" : "none"
           }}
           name="text"
-          readOnly
+          readOnly={!canEditInline}
+          onChange={(e) => {
+            if (!canEditInline) return;
+            const val = e.target.value;
+            setwidgetValue(val);
+            if (props.setXyPosition) {
+              onChangeInput(
+                val,
+                props.pos,
+                props.xyPosition,
+                props.index,
+                props.setXyPosition,
+                props.data?.Id || props.uniqueId,
+                false,
+                null,
+                props.pos?.options?.fontSize || 12,
+                props.pos?.options?.fontColor || "black",
+                null,
+                null
+              );
+            }
+          }}
           disabled={props.isNeedSign && isReadOnly}
           cols="50"
         />
