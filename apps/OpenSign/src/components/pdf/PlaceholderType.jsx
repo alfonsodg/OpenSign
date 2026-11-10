@@ -48,9 +48,14 @@ function PlaceholderType(props) {
       props.data?.signerObjId !== props.signerObjId);
   // In-field editing: the signer edits their own widgets, and the authoring
   // flows edit placeholders directly on the page.
+  const isOwnWidget =
+    props.data?.signerObjId &&
+    props.data?.signerObjId === props.signerObjId &&
+    !props.pos?.options?.isReadOnly;
   const canEditInline =
     (props.isPlaceholder && !props.isNeedSign) ||
-    (props.isNeedSign && iswidgetEnable && !isReadOnly);
+    (props.isNeedSign && iswidgetEnable && !isReadOnly) ||
+    !!isOwnWidget;
   // prefer the latest response value over any default value
   //props?.isPrefillModal is used to handle in create template flow when user use use-template button
   //then prefill details should not be reflect on pdf document it should only show in modal
