@@ -1030,6 +1030,17 @@ function Placeholder(props) {
             )}
           <div
             className="flex items-stretch justify-center"
+            data-dbg={JSON.stringify({
+              t: props.pos?.type,
+              wSigner: props.data?.signerObjId || null,
+              sSigner: props.signerObjId || null,
+              needSign: !!props.isNeedSign,
+              selfSign: !!props.isSelfSign,
+              signYourself: !!props.isSignYourself,
+              placeholder: !!props.isPlaceholder,
+              ro: !!props.pos?.options?.isReadOnly,
+              role: props.data?.Role || null
+            })}
             style={{
               left: xPos(props.pos),
               top: yPos(props.pos),
