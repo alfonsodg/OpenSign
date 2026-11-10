@@ -873,6 +873,7 @@ function Placeholder(props) {
             topLeft: false
           }}
           bounds="parent"
+          cancel="input, select, textarea, button, label, option"
           className="signYourselfBlock"
           style={{
             border: "1.5px solid #007bff",
