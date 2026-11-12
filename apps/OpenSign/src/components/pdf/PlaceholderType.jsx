@@ -781,18 +781,19 @@ case "dropdown": {
               }}
               dateFormat={momentFormat}
               popperPlacement="bottom-end"
+              portalId="datepicker-portal-root"
+              popperProps={{ strategy: "fixed" }}
               popperModifiers={[
-                { name: "offset", options: { offset: [0, 6] } },
+                { name: "offset", options: { mainAxis: 6 } },
                 {
-                  name: "preventOverflow",
-                  options: {
-                    boundary: "viewport",
-                    rootBoundary: "document",
-                    padding: 12,
-                    altAxis: true
-                  }
+                  name: "flip",
+                  options: { padding: 12, rootBoundary: "viewport" }
                 },
-                { name: "flip", options: { padding: 12 } }
+                {
+                  name: "shift",
+                  options: { padding: 12, rootBoundary: "viewport" }
+                },
+                { name: "size", options: { padding: 12 } }
               ]}
               customInput={
                 <input
