@@ -783,18 +783,6 @@ case "dropdown": {
               popperPlacement="bottom-end"
               portalId="datepicker-portal-root"
               popperProps={{ strategy: "fixed" }}
-              popperModifiers={[
-                { name: "offset", options: { mainAxis: 6 } },
-                {
-                  name: "flip",
-                  options: { padding: 12, rootBoundary: "viewport" }
-                },
-                {
-                  name: "shift",
-                  options: { padding: 12, rootBoundary: "viewport" }
-                },
-                { name: "size", options: { padding: 12 } }
-              ]}
               customInput={
                 <input
                   style={{ fontSize: fontSize, color: fontColor }}
