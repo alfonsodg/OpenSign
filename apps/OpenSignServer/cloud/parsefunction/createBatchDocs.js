@@ -328,8 +328,8 @@ export default async function createBatchDocs(request) {
   const Documents = JSON.parse(strDocuments);
 
   const Ip = request?.headers?.['x-real-ip'] || '';
-  // Use the browser origin so signing links keep the custom domain.
-  let publicUrl = request.headers.origin || request.headers.public_url;
+  // public_url is resolved from the Origin only when it is an allowed domain.
+  let publicUrl = request.headers.public_url;
   const parseConfig = {
     baseURL: serverUrl,
     headers: {

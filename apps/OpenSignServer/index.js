@@ -20,6 +20,7 @@ import { SSOAuth } from './auth/authadapter.js';
 import runDbMigrations from './migrationdb/index.js';
 import { validateSignedLocalUrl } from './cloud/parsefunction/getSignedUrl.js';
 import { parseTrustProxy, resolveClientIp } from './utils/clientIp.js';
+import { parseOriginList, resolvePublicUrl } from './utils/publicUrl.js';
 let fsAdapter;
 
 if (useLocal !== 'true') {
@@ -214,10 +215,22 @@ app.use((req, res, next) => {
   next();
 });app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
+/**
+ * Base URL for email links: PUBLIC_URL, else the origin of SERVER_URL.
+ * Extra custom domains come from PUBLIC_URL_ALLOWLIST.
+ */
+const publicUrlConfig = {
+  baseUrl:
+    process.env.PUBLIC_URL ||
+    (process.env.SERVER_URL ? new URL(process.env.SERVER_URL).origin : ''),
+  allowlist: parseOriginList(process.env.PUBLIC_URL_ALLOWLIST),
+};
 app.use(function (req, res, next) {
   req.headers['x-real-ip'] = getUserIP(req);
-  let publicUrl = 'https://' + req?.get('host');
-  req.headers['public_url'] = publicUrl;
+  req.headers['public_url'] = resolvePublicUrl(
+    { host: req?.get('host'), origin: req.headers.origin },
+    publicUrlConfig
+  );
   next();
 });
 /**

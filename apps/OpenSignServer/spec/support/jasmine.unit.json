@@ -1,6 +1,6 @@
 {
   "spec_dir": "spec",
-  "spec_files": ["unit.spec.js", "clientIp.spec.js"],
+  "spec_files": ["unit.spec.js", "clientIp.spec.js", "publicUrl.spec.js"],
   "helpers": [],
   "stopSpecOnExpectationFailure": false,
   "random": false
