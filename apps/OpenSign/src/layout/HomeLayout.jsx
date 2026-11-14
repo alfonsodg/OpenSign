@@ -263,7 +263,7 @@ const HomeLayout = () => {
               </div>
             </PageScrollContainer>
           </div>
-          {isTour && (
+          {isTour && tourConfigs.length > 0 && (
             <Tour
               onRequestClose={closeTour}
               steps={tourConfigs}

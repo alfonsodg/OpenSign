@@ -24,7 +24,7 @@ import {
 
 dotenv.config({ quiet: true });
 
-export const cloudServerUrl = 'http://localhost:8080/app';
+export const cloudServerUrl = `http://localhost:${process.env.PORT || 8080}/app`;
 export const serverAppId = process.env.APP_ID || 'opensign';
 export const appName = 'OpenSign™';
 export const prefillDraftDocWidget = ['date', 'textbox', 'checkbox', 'radio button', 'image'];
@@ -152,7 +152,12 @@ export function sanitizeFileName(fileName) {
 }
 
 export const useLocal = process.env.USE_LOCAL ? process.env.USE_LOCAL.toLowerCase() : 'false';
-export const smtpsecure = process.env.SMTP_PORT && process.env.SMTP_PORT !== '465' ? false : true;
+export const smtpsecure =
+  process.env.SMTP_SECURE !== undefined
+    ? process.env.SMTP_SECURE.toLowerCase() === 'true'
+    : process.env.SMTP_PORT && process.env.SMTP_PORT !== '465'
+      ? false
+      : true;
 export const smtpenable =
   process.env.SMTP_ENABLE && process.env.SMTP_ENABLE.toLowerCase() === 'true' ? true : false;
 export const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -225,6 +230,46 @@ export const flattenPdf = async pdfFile => {
           const field = pdfDoc.context.lookup(fRef);
           if (hasSignatureField(pdfDoc.context, field)) {
             return inputBytes;
+          }
+        }
+      }
+    }
+  } catch {
+    // If AcroForm inspection fails, continue with normal flatten.
+  }
+
+  // Preserve existing digital signatures: if the document contains a
+  // signature field (SigFlags or /FT /Sig), skip flattening to avoid
+  // invalidating the signature or dropping signature widgets.
+  try {
+    const acroFormEntry = pdfDoc.catalog.get(PDFName.of('AcroForm'));
+    const acroForm = pdfDoc.context.lookupMaybe
+      ? pdfDoc.context.lookupMaybe(acroFormEntry)
+      : pdfDoc.context.lookup(acroFormEntry);
+    if (acroForm) {
+      const sigFlags = acroForm.get(PDFName.of('SigFlags'));
+      if (sigFlags && Number(sigFlags) > 0) {
+        return pdfFile;
+      }
+      const fieldsRef = acroForm.get(PDFName.of('Fields'));
+      const fields = fieldsRef ? pdfDoc.context.lookup(fieldsRef) : null;
+      if (fields && fields.asArray) {
+        for (const fRef of fields.asArray()) {
+          const f = pdfDoc.context.lookup(fRef);
+          const ft = f?.get(PDFName.of('FT'));
+          if (ft && ft.toString() === '/Sig') {
+            return pdfFile;
+          }
+          const kidsRef = f?.get(PDFName.of('Kids'));
+          const kids = kidsRef ? pdfDoc.context.lookup(kidsRef) : null;
+          if (kids && kids.asArray) {
+            for (const kRef of kids.asArray()) {
+              const k = pdfDoc.context.lookup(kRef);
+              const kft = k?.get(PDFName.of('FT'));
+              if (kft && kft.toString() === '/Sig') {
+                return pdfFile;
+              }
+            }
           }
         }
       }
@@ -703,6 +748,22 @@ function _removeWidgetAnnotationsServer(pdfDoc) {
 }
 
 // Format date and time for the selected timezone
+export const stripHtml = html => {
+  if (!html) return '';
+  return String(html)
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 export const formatTimeInTimezone = (date, timezone) => {
   const nyDate = timezone && toZonedTime(date, timezone);
   const generatedDate = timezone

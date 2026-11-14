@@ -1,3 +1,4 @@
+import { UI_FONT } from "../../constant/fonts";
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import ModalUi from "../../primitives/ModalUi";
 import {
@@ -155,7 +156,18 @@ function PrefillWidgetModal(props) {
     const flatArray = filteredArray
       ?.flatMap((page) =>
         page.pos
-          .filter((widget) => !widget.options?.isReadOnly)
+          .filter((widget) => {
+            if (widget.options?.isReadOnly) return false;
+            // Only pending fields. A checked checkbox stores [0], where 0 is a
+            // valid option index, so array length decides, not truthiness.
+            // Signature, stamp, initials and image keep their value in SignUrl.
+            if (widget.SignUrl) return false;
+            const value = widget.options?.response;
+            if (Array.isArray(value)) return value.length === 0;
+            if (typeof value === "string") return value.trim() === "";
+            if (typeof value === "number") return false;
+            return value == null;
+          })
           .map((widget) => ({
             widget,
             pageNumber: page.pageNumber,
@@ -222,7 +234,7 @@ function PrefillWidgetModal(props) {
   }, [props?.isPrefillModal, uniqueWidget]);
   const ExampleCustomInput = forwardRef(({ value, onClick }, ref) => (
     <div
-      style={{ fontFamily: "Arial, sans-serif" }}
+      style={{ fontFamily: UI_FONT }}
       className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full"
       onClick={onClick}
       ref={ref}
@@ -505,34 +517,67 @@ function PrefillWidgetModal(props) {
             />
           </>
         );
-      case "dropdown":
+      case "dropdown": {
+        if (position?.options?.isMultiSelect) {
+          const optionLabel = (value) =>
+            value == null
+              ? ""
+              : typeof value === "object"
+                ? String(value.name ?? value.value ?? "")
+                : String(value);
+          const optionsList = (position?.options?.values || [])
+            .map(optionLabel)
+            .filter((value) => value !== "");
+          const currentValues = Array.isArray(position?.options?.response)
+            ? position.options.response.map(optionLabel)
+            : position?.options?.response
+              ? [optionLabel(position.options.response)]
+              : [];
+          const persist = (next) => handleWidgetDetails(position, next);
+          return (
+            <div className="flex flex-col gap-1 max-h-40 overflow-auto border border-base-300 rounded p-2">
+              {optionsList.length === 0 ? (
+                <div className="text-xs text-base-content/60">{t("no-options")}</div>
+              ) : (
+                optionsList.map((data, ind) => (
+                  <label key={ind} className="flex items-center gap-2 text-xs text-base-content cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="op-checkbox op-checkbox-xs rounded-[1px]"
+                      checked={currentValues.includes(data)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...currentValues, data]
+                          : currentValues.filter((v) => v !== data);
+                        persist(next);
+                      }}
+                    />
+                    <span>{data}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          );
+        }
         return (
-          <>
-            <span
-              className={`${widgetLabelCss(position?.options?.status === "required")} ${widgetTitle}`}
-            >
-              {position.options?.name}
-            </span>
-            <select
-              className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content text-base-content w-full"
-              id="myDropdown"
-              value={
-                position?.options?.response || position?.options?.defaultValue
-              }
-              onChange={(e) => handleWidgetDetails(position, e.target.value)}
-            >
-              {/* Default/Title option */}
-              <option value="" disabled hidden>
-                {t("choose-one")}
+          <select
+            className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content text-base-content w-full text-xs"
+            id="myDropdown"
+            value={position?.options?.response || ""}
+            onChange={(e) => handleWidgetDetails(position, e.target.value)}
+          >
+            <option value="" disabled hidden>
+              {t("choose-one")}
+            </option>
+            {position?.options?.values?.map((data, ind) => (
+              <option key={ind} value={data?.trim()}>
+                {data?.trim()}
               </option>
-              {position?.options?.values?.map((data, ind) => (
-                <option key={ind} value={data}>
-                  {data}
-                </option>
-              ))}
-            </select>
-          </>
+            ))}
+          </select>
         );
+      }
+
       case "date":
         return (
           <>

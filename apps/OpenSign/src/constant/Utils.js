@@ -814,6 +814,21 @@ export async function getBase64FromUrl(url, autosign) {
   });
 }
 
+// Turns an already downloaded ArrayBuffer into base64, so callers do not
+// need to fetch the same URL a second time just to encode it.
+export const arrayBufferToBase64 = (buffer) => {
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(
+      null,
+      bytes.subarray(i, i + chunk)
+    );
+  }
+  return btoa(binary);
+};
+
 export async function getBase64FromIMG(url) {
   const data = await fetch(url);
   const blob = await data.blob();
@@ -932,6 +947,9 @@ export const signPdfFun = async (
   activity
 ) => {
   let isCustomCompletionMail = false;
+  if (!base64Url) {
+    return { status: "error", message: "No PDF data to sign." };
+  }
   try {
     //qes: skip getTenantDetails when objectId is unavailable (QES redirect-back)
     if (objectId) {
@@ -950,7 +968,7 @@ export const signPdfFun = async (
     // below for loop is used to get first signature of user to send if to signpdf
     // for adding it in completion certificate
     let getSignature;
-    for (let item of widgets) {
+    for (let item of (widgets || [])) {
       if (!getSignature) {
         const typeExist = item.pos.some((data) => data?.type);
         if (typeExist) {
@@ -2443,10 +2461,42 @@ export const embedWidgetsToDoc = async (
           const dropdownRandomId = "dropdown" + randomId();
           const dropdown = form.createDropdown(dropdownRandomId);
           dropdown.addOptions(position?.options?.values);
-          if (position?.options?.response) {
-            dropdown.select(position.options?.response);
-          } else if (position?.options?.defaultValue) {
-            dropdown.select(position?.options?.defaultValue);
+          // A multi-select field stores an array, so every selected value has
+          // to be applied at once.
+          if (position?.options?.isMultiSelect && dropdown.enableMultiselect) {
+            dropdown.enableMultiselect();
+          }
+          const toValues = (value) => {
+            if (Array.isArray(value)) return value.filter((v) => v != null);
+            return value ? [value] : [];
+          };
+          const selectedValues = toValues(position?.options?.response).length
+            ? toValues(position?.options?.response)
+            : toValues(position?.options?.defaultValue);
+          if (selectedValues.length > 0) {
+            const allowed = (position?.options?.values || []).map((v) =>
+              v == null
+                ? ""
+                : typeof v === "object"
+                  ? String(v?.name ?? v?.value ?? "")
+                  : String(v)
+            );
+            const picked = selectedValues
+              .map((v) =>
+                v == null
+                  ? ""
+                  : typeof v === "object"
+                    ? String(v?.name ?? v?.value ?? "")
+                    : String(v)
+              )
+              .filter((v) => v && allowed.includes(v));
+            if (picked.length > 0) {
+              try {
+                dropdown.select(...picked);
+              } catch (e) {
+                // ignore values pdf-lib refuses; keep the rest of the embed
+              }
+            }
           }
           // Define the default appearance string
           // Example format: `/FontName FontSize Tf 0 g` where:
@@ -2552,17 +2602,27 @@ export const embedWidgetsToDoc = async (
               }
             });
           }
-          const isOptionExist = position?.options?.values?.some(
-            (x) =>
-              x === position?.options?.response ||
-              position?.options?.defaultValue
+          // pdf-lib only accepts a string that exists in the option list;
+          // anything else (NaN, objects, stale values) aborts the whole embed.
+          const asOptionText = (value) =>
+            value == null
+              ? ""
+              : typeof value === "string"
+                ? value
+                : typeof value === "object"
+                  ? String(value?.name ?? value?.value ?? "")
+                  : String(value);
+          const radioOptions = (position?.options?.values || []).map(
+            asOptionText
           );
-          if (isOptionExist) {
-            // 5. Pre‐select a value if provided
-            if (position?.options?.response) {
-              radioGroup.select(position.options?.response);
-            } else if (position?.options?.defaultValue) {
-              radioGroup.select(position?.options?.defaultValue);
+          const wantedRadio =
+            asOptionText(position?.options?.response) ||
+            asOptionText(position?.options?.defaultValue);
+          if (wantedRadio && radioOptions.includes(wantedRadio)) {
+            try {
+              radioGroup.select(wantedRadio);
+            } catch (e) {
+              // a bad value must not block the document from finishing
             }
           }
           // 6. Set to read‐only (if required)
@@ -3418,7 +3478,7 @@ export const getDefaultSignature = async (objectId) => {
 //function to rotate pdf page
 export async function rotatePdfPage(rotateDegree, pageNumber, pdfArrayBuffer) {
   // Load the existing PDF
-  const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+  const pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
   // Get the page according to page number
   const page = pdfDoc.getPage(pageNumber);
   //get current page rotation angle
@@ -3673,7 +3733,7 @@ export const formatDateToDdMmmYyyy = (date) => {
 export const deletePdfPage = async (pdfArrayBuffer, pageNumber) => {
   try {
     // Load the existing PDF
-    const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+    const pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
     // Get the total number of pages
     const totalPages = pdfDoc.getPageCount();
     // Ensure the page index is valid
@@ -3700,7 +3760,7 @@ export const deletePdfPage = async (pdfArrayBuffer, pageNumber) => {
 
 export const reorderPdfPages = async (pdfArrayBuffer, orderArr) => {
   try {
-    const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+    const pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
     const newPdf = await PDFDocument.create();
     const pages = await newPdf.copyPages(
       pdfDoc,
@@ -3826,6 +3886,41 @@ export const flattenPdf = async (pdfFile) => {
         for (const fRef of fields.asArray()) {
           const field = pdfDoc.context.lookup(fRef);
           if (hasSignatureField(pdfDoc.context, field)) return inputBytes;
+        }
+      }
+    }
+  } catch {
+    // continue with normal flatten
+  }
+
+  // Preserve existing digital signatures: if the document contains a
+  // signature field (SigFlags or /FT /Sig), skip flattening entirely.
+  try {
+    const acroFormEntry = pdfDoc.catalog.get(PDFName.of('AcroForm'));
+    const acroForm = pdfDoc.context.lookupMaybe
+      ? pdfDoc.context.lookupMaybe(acroFormEntry)
+      : pdfDoc.context.lookup(acroFormEntry);
+    if (acroForm) {
+      const sigFlags = acroForm.get(PDFName.of('SigFlags'));
+      if (sigFlags && Number(sigFlags) > 0) {
+        return pdfFile;
+      }
+      const fieldsRef = acroForm.get(PDFName.of('Fields'));
+      const fields = fieldsRef ? pdfDoc.context.lookup(fieldsRef) : null;
+      if (fields && fields.asArray) {
+        for (const fRef of fields.asArray()) {
+          const f = pdfDoc.context.lookup(fRef);
+          const ft = f?.get(PDFName.of('FT'));
+          if (ft && ft.toString() === '/Sig') return pdfFile;
+          const kidsRef = f?.get(PDFName.of('Kids'));
+          const kids = kidsRef ? pdfDoc.context.lookup(kidsRef) : null;
+          if (kids && kids.asArray) {
+            for (const kRef of kids.asArray()) {
+              const k = pdfDoc.context.lookup(kRef);
+              const kft = k?.get(PDFName.of('FT'));
+              if (kft && kft.toString() === '/Sig') return pdfFile;
+            }
+          }
         }
       }
     }
@@ -4639,8 +4734,9 @@ export const decryptPdf = async (file, password) => {
   formData.append("file", file);
   formData.append("password", password);
   const config = {
-    headers: { "content-type": "multipart/form-data" },
-    responseType: "blob"
+    responseType: "blob",
+    // The endpoint requires an authenticated caller.
+    headers: { sessiontoken: localStorage.getItem("accesstoken") || "" }
   };
   const response = await axios.post(url, formData, config);
   const pdfBlob = new Blob([response.data], { type: "application/pdf" });

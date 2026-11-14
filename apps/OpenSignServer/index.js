@@ -71,8 +71,8 @@ if (smtpenable) {
     };
 
     // ✅ Add auth only if BOTH username & password exist
-    const smtpUser = process.env.SMTP_USERNAME;
-    const smtpPass = process.env.SMTP_PASS;
+    const smtpUser = process.env.SMTP_USERNAME || process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
 
     if (smtpUser && smtpPass) {
       transporterConfig.auth = {
@@ -114,12 +114,23 @@ export const config = {
   maxLimit: 500,
   maxUploadSize: '100mb',
   masterKey: process.env.MASTER_KEY, //Add your master key here. Keep it secret!
-  masterKeyIps: ['0.0.0.0/0', '::/0'], // '::1'
+  // The master key overrides every ACL, so it is only accepted from the
+  // addresses that actually need it: loopback by default, overridable for
+  // deployments that run the API in a separate container network.
+  masterKeyIps: (process.env.MASTER_KEY_IPS || '127.0.0.1,::1')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean),
   serverURL: cloudServerUrl, // Don't forget to change to https if needed
   verifyUserEmails: false,
   publicServerURL: process.env.SERVER_URL || cloudServerUrl,
   // Your apps name. This will appear in the subject and body of the emails that are sent.
   appName: appName,
+  // Reject trivially weak passwords at signup and at password change.
+  // This Parse Server release accepts only these two keys.
+  passwordPolicy: {
+    validatorPattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/,
+  },
   allowClientClassCreation: false,
   allowExpiredAuthDataToken: false,
   enableInsecureAuthAdapters: false,
@@ -169,8 +180,38 @@ export const config = {
 // javascriptKey, restAPIKey, dotNetKey, clientKey
 
 export const app = express();
-app.use(cors());
-app.use(express.json({ limit: '100mb' }));
+// Only the configured public origins may call the API from a browser.
+// Requests without an Origin header (server to server, curl) keep working.
+const corsAllowlist = (
+  process.env.CORS_ORIGINS ||
+  [process.env.SERVER_URL, process.env.PUBLIC_URL, process.env.HOST_URL]
+    .filter(Boolean)
+    .join(',')
+)
+  .split(',')
+  .map(origin => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || corsAllowlist.length === 0) return callback(null, true);
+      return callback(null, corsAllowlist.includes(origin.replace(/\/$/, '')));
+    },
+  })
+);
+
+
+// Baseline security headers. A CSP is added at the reverse proxy, where the
+// asset and font origins are known.
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  next();
+});app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use(function (req, res, next) {
   req.headers['x-real-ip'] = getUserIP(req);
@@ -273,5 +314,58 @@ if (!process.env.TESTING) {
       }
       console.log(`Command output: ${stdout}`);
     });
+
+    // Automatic reminders scheduler (issue #2268): runs hourly.
+    const runReminders = async () => {
+      try {
+        const now = new Date();
+        const q = new Parse.Query('contracts_Document');
+        q.equalTo('AutomaticReminders', true);
+        q.notEqualTo('IsCompleted', true);
+        q.notEqualTo('IsDeclined', true);
+        q.notEqualTo('IsArchive', true);
+        q.lessThanOrEqualTo('NextReminderDate', now);
+        q.limit(100);
+        const docs = await q.find({ useMasterKey: true });
+        for (const doc of docs) {
+          try {
+            const expiry = doc.get('ExpiryDate');
+            if (expiry && new Date(expiry) < now) {
+              doc.set('AutomaticReminders', false);
+              await doc.save(null, { useMasterKey: true });
+              continue;
+            }
+            const creator = doc.get('ExtUserPtr');
+            const creatorEmail = creator?.get?.('Email') || doc.get('SenderMail');
+            const pdfName = doc.get('Name') || 'Document';
+            if (creatorEmail) {
+              await Parse.Cloud.sendEmail({
+                sender: `${appName} <${process.env.SMTP_USER_EMAIL || process.env.MAILGUN_SENDER || ''}>`,
+                recipient: creatorEmail,
+                subject: `Reminder: "${pdfName}" is still pending signature`,
+                text: `Reminder: "${pdfName}" is still pending signature.`,
+                html: `<p>Reminder: "${pdfName}" is still pending signature.</p>`,
+              });
+            }
+            const every = doc.get('RemindOnceInEvery') || 5;
+            const next = new Date(doc.get('NextReminderDate') || now);
+            next.setDate(next.getDate() + every);
+            if (expiry && next > new Date(expiry)) {
+              doc.set('AutomaticReminders', false);
+            } else {
+              doc.set('NextReminderDate', next);
+            }
+            await doc.save(null, { useMasterKey: true });
+          } catch (e) {
+            console.log('reminder error for doc', doc?.id, e?.message);
+          }
+        }
+      } catch (e) {
+        console.log('reminder scheduler error', e?.message);
+      }
+    };
+    // run once after startup (delayed) then hourly
+    setTimeout(runReminders, 60000);
+    setInterval(runReminders, 60 * 60 * 1000);
   });
 }

@@ -745,7 +745,7 @@ function PdfRequestFiles(
               //condition to embed prefill widgets details in pdf in public signing flow
               if (prefillDetails && props.templateId) {
                 const prefillwidgets = prefillDetails?.placeHolder;
-                const pdfDoc = await PDFDocument.load(pdfArrBuffer);
+                const pdfDoc = await PDFDocument.load(pdfArrBuffer, { ignoreEncryption: true });
                 const pdfbase64 = await embedWidgetsToDoc(
                   prefillwidgets,
                   pdfDoc,
@@ -769,7 +769,7 @@ function PdfRequestFiles(
               setHandleError("Document not Found!");
             }
             try {
-              const pdfDoc = await PDFDocument.load(pdfArrBuffer);
+              const pdfDoc = await PDFDocument.load(pdfArrBuffer, { ignoreEncryption: true });
               const extUserPtr = pdfDetails[0].ExtUserPtr;
               const HeaderDocId = extUserPtr?.HeaderDocId;
               //embed document's object id to all pages in pdf document
@@ -787,7 +787,7 @@ function PdfRequestFiles(
                 scale
               );
               //get ExistUserPtr object id of user class to get tenantDetails
-              if (!pdfBytes?.error) {
+              if (pdfBytes && !pdfBytes?.error) {
                 const objectId = pdfDetails?.[0]?.ExtUserPtr?.UserId?.objectId;
                 //function for call to embed signature in pdf and get digital signature pdf
                 const resSign = await signPdfFun(
@@ -1168,6 +1168,9 @@ function PdfRequestFiles(
   //function for update TourStatus
   const closeTour = async () => {
     setWidgetsTour(false);
+    // The tour scrolls the document to the unsigned widget; bring the page
+    // back so the top bar with cancel/finish stays reachable.
+    window.scrollTo({ top: 0 });
   };
 
   const tourConfig = [
@@ -1221,6 +1224,10 @@ function PdfRequestFiles(
           const currentDecline = { currnt: "YouDeclined", isDeclined: true };
           setIsDecline(currentDecline);
           setIsUiLoading(false);
+          if (redirectUrl) {
+            setRedirectTimeLeft(5);
+            setIsredirectCanceled(false);
+          }
         }
       })
       .catch((err) => {

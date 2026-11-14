@@ -11,6 +11,7 @@ import Header from "../components/pdf/PdfHeader";
 import useWidgetHistory from "../hook/useWidgetHistory";
 import WidgetNameModal from "../components/pdf/WidgetNameModal";
 import {
+  arrayBufferToBase64,
   copytoData,
   pdfNewWidthFun,
   contractUsers,
@@ -33,7 +34,6 @@ import {
   signatureTypes,
   getTenantDetails,
   handleSignatureType,
-  getBase64FromUrl,
   convertPdfArrayBuffer,
   generatePdfName,
   textWidget,
@@ -287,7 +287,9 @@ const TemplatePlaceholder = () => {
         const url = documentData[0] && documentData[0]?.URL;
         if (url) {
           const arrayBuffer = await convertPdfArrayBuffer(url);
-          const base64Pdf = await getBase64FromUrl(url);
+          // One download is enough: encode the buffer we already have.
+          const base64Pdf =
+            arrayBuffer === "Error" ? "" : arrayBufferToBase64(arrayBuffer);
           if (arrayBuffer === "Error") {
             setHandleError(t("something-went-wrong-mssg"));
           } else {
@@ -1444,6 +1446,7 @@ const TemplatePlaceholder = () => {
     defaultValue,
     isHideLabel,
     layout,
+    isMultiSelect,
   ) => {
     const widgetPageNumber = currWidgetsDetails?.pageNumber || pageNumber;
     const isPrefill = signerPos.some(
@@ -1542,6 +1545,7 @@ const TemplatePlaceholder = () => {
                   name: dropdownName,
                   status: status,
                   values: dropdownOptions,
+                  isMultiSelect: isMultiSelect || false,
                   defaultValue: defaultValue,
                   fontSize: textSize || 12,
                   fontColor: textColor || "black",
