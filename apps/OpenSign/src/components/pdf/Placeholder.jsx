@@ -586,6 +586,67 @@ function Placeholder(props) {
               className="fa-light fa-gear icon text-[#188ae2] text-[14px] z-[99] -top-[18px] pointer-events-auto"
             ></i>
           )}
+          {props.isPlaceholder &&
+            ["text", textInputWidget, "name", "company", "job title", "email"].includes(
+              props.pos.type
+            ) && (
+              <i
+                className={`fa-light ${props.pos?.options?.isMasked ? "fa-eye-slash" : "fa-eye"} icon text-[#188ae2] right-[34px] -top-[18px]`}
+                title={props.pos?.options?.isMasked ? "Unmask field" : "Mask field"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const isMasked = !props.pos?.options?.isMasked;
+                  props.setXyPosition((prev) => {
+                    const isSignerList = prev.some(
+                      (item) => item.signerPtr || item.Role === "prefill"
+                    );
+                    if (isSignerList) {
+                      const signerId = props.data?.Id || props.uniqueId;
+                      return prev.map((item) => {
+                        if (item.Id !== signerId) return item;
+                        const placeHolder = (item.placeHolder || []).map((page) =>
+                          page.pageNumber !== props.widgetPageNum
+                            ? page
+                            : {
+                                ...page,
+                                pos: page.pos.map((widget) =>
+                                  widget.key === props.pos.key
+                                    ? {
+                                        ...widget,
+                                        options: { ...widget.options, isMasked }
+                                      }
+                                    : widget
+                                )
+                              }
+                        );
+                        return { ...item, placeHolder };
+                      });
+                    }
+                    return prev.map((item, index) =>
+                      index === props.index
+                        ? {
+                            ...item,
+                            pos: item.pos.map((widget) =>
+                              widget.key === props.pos.key
+                                ? {
+                                    ...widget,
+                                    options: { ...widget.options, isMasked }
+                                  }
+                                : widget
+                            )
+                          }
+                        : item
+                    );
+                  });
+                  props.setCurrWidgetsDetails?.({
+                    ...props.pos,
+                    options: { ...props.pos.options, isMasked },
+                    pageNumber: props.widgetPageNum
+                  });
+                }}
+                onTouchEnd={(e) => e.stopPropagation()}
+              />
+            )}
           {/* copy icon for all widgets (except QES) */}
             <i
               className="fa-light fa-copy icon text-[#188ae2] right-[12px] -top-[18px] "
@@ -836,7 +897,8 @@ function Placeholder(props) {
             whiteSpace: "pre-wrap",
             overflow: "visible",
             outline: props.isAreaSelected ? "2px solid #6b7280" : "none",
-            border: "none"
+            border: "none",
+            WebkitTextSecurity: props.pos?.options?.isMasked ? "disc" : "none"
           }}
         >
           {
