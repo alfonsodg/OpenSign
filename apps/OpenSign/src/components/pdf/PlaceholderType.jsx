@@ -54,7 +54,9 @@ function PlaceholderType(props) {
     !props.pos?.options?.isReadOnly;
   const canEditInline =
     (props.isPlaceholder && !props.isNeedSign) ||
-    (props.isNeedSign && iswidgetEnable && !isReadOnly) ||
+    ((props.isNeedSign || props.isSelfSign || props.isSignYourself) &&
+      iswidgetEnable &&
+      !isReadOnly) ||
     !!isOwnWidget;
   // prefer the latest response value over any default value
   //props?.isPrefillModal is used to handle in create template flow when user use use-template button
@@ -354,6 +356,15 @@ function PlaceholderType(props) {
                       ? [...selectedCheckbox]
                       : [];
                     if (isChecked) {
+                      const maxRequired =
+                        props.pos?.options?.validation?.maxRequiredCount;
+                      if (
+                        typeof maxRequired === "number" &&
+                        maxRequired > 0 &&
+                        updateSelectedCheckbox.length >= maxRequired
+                      ) {
+                        return;
+                      }
                       updateSelectedCheckbox.push(ind);
                     } else {
                       updateSelectedCheckbox = updateSelectedCheckbox.filter(

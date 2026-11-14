@@ -298,7 +298,22 @@ function Placeholder(props) {
       } else if (props?.data?.Role === "prefill") {
         props?.handleClosePrefillTour?.();
         props?.closeWidgetTour?.();
-        dispatch(setIsShowModal({ [props.pos.key]: true }));
+        const inlineTypes = [
+          "text",
+          textInputWidget,
+          "name",
+          "company",
+          "job title",
+          "email",
+          "checkbox",
+          radioButtonWidget,
+          "dropdown",
+          "date",
+          cellsWidget
+        ];
+        if (!inlineTypes.includes(props.pos.type)) {
+          dispatch(setIsShowModal({ [props.pos.key]: true }));
+        }
         props.setUniqueId(props?.data?.Id);
         props?.setRoleName("prefill");
       }
