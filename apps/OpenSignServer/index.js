@@ -21,6 +21,7 @@ import runDbMigrations from './migrationdb/index.js';
 import { validateSignedLocalUrl } from './cloud/parsefunction/getSignedUrl.js';
 import { parseTrustProxy, resolveClientIp } from './utils/clientIp.js';
 import { getServerConfig } from './utils/serverConfig.js';
+import { getDatabaseUri, getSmtpPort } from './utils/envConfig.js';
 import { parseOriginList, resolvePublicUrl } from './utils/publicUrl.js';
 let fsAdapter;
 
@@ -69,7 +70,7 @@ if (smtpenable) {
   try {
     let transporterConfig = {
       host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT || 465,
+      port: getSmtpPort(process.env),
       secure: smtpsecure,
     };
 
@@ -107,8 +108,7 @@ if (smtpenable) {
 const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
 const deploymentSenderName = resolveDeploymentBrand().senderName;
 export const config = {
-  databaseURI:
-    process.env.DATABASE_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/dev',
+  databaseURI: getDatabaseUri(process.env),
   cloud: function () {
     import('./cloud/main.js');
   },
