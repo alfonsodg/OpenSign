@@ -2,7 +2,13 @@ import fs from 'node:fs';
 import https from 'https';
 import formData from 'form-data';
 import Mailgun from 'mailgun.js';
-import { smtpenable, smtpsecure, normalizeMailSubject, updateMailCount } from '../../Utils.js';
+import {
+  smtpenable,
+  smtpsecure,
+  normalizeMailSubject,
+  updateMailCount,
+} from '../../Utils.js';
+import { getServerConfig, rewritePublicApiUrl } from '../../utils/serverConfig.js';
 import { renderComplaintFooter, resolveBrandContext } from '../../utils/brandContext.js';
 import { createTransport } from 'nodemailer';
 import axios from 'axios';
@@ -84,9 +90,10 @@ async function sendMailProvider(params) {
             } else {
               const httpsAgent = new https.Agent({ rejectUnauthorized: false }); // Disable SSL validation
               const localUrl = params.url;
-              const newlocalUrl = localUrl.replace(
-                'https://localhost:3001/api',
-                'http://localhost:8080'
+              const newlocalUrl = rewritePublicApiUrl(
+                localUrl,
+                process.env.PUBLIC_API_URL,
+                getServerConfig(process.env).serverOrigin
               );
               axios
                 .get(newlocalUrl, { responseType: 'stream', httpsAgent: httpsAgent })
