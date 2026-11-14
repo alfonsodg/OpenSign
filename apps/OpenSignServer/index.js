@@ -19,6 +19,7 @@ import { resolveDeploymentBrand } from './utils/brandContext.js';
 import { SSOAuth } from './auth/authadapter.js';
 import runDbMigrations from './migrationdb/index.js';
 import { validateSignedLocalUrl } from './cloud/parsefunction/getSignedUrl.js';
+import { parseTrustProxy, resolveClientIp } from './utils/clientIp.js';
 let fsAdapter;
 
 if (useLocal !== 'true') {
@@ -219,23 +220,13 @@ app.use(function (req, res, next) {
   req.headers['public_url'] = publicUrl;
   next();
 });
+/**
+ * Client IP for the audit trail. Proxy headers are used only as configured
+ * by TRUST_PROXY (hop count or "cloudflare").
+ */
+const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
 function getUserIP(request) {
-  const cloudflareIp = request.headers['cf-connecting-ip'];
-  if (typeof cloudflareIp === 'string' && cloudflareIp.trim()) {
-    return cloudflareIp.trim();
-  }
-
-  const forwardedFor = request.headers['x-forwarded-for'];
-  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  const realIp = request.headers['x-real-ip'];
-  if (typeof realIp === 'string' && realIp.trim()) {
-    return realIp.trim();
-  }
-
-  return request.socket?.remoteAddress || '';
+  return resolveClientIp(request.headers, request.socket?.remoteAddress, trustProxy);
 }
 
 app.use(async function (req, res, next) {
