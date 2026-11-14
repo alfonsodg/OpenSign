@@ -20,6 +20,7 @@ import { SSOAuth } from './auth/authadapter.js';
 import runDbMigrations from './migrationdb/index.js';
 import { validateSignedLocalUrl } from './cloud/parsefunction/getSignedUrl.js';
 import { parseTrustProxy, resolveClientIp } from './utils/clientIp.js';
+import { getServerConfig } from './utils/serverConfig.js';
 import { parseOriginList, resolvePublicUrl } from './utils/publicUrl.js';
 let fsAdapter;
 
@@ -287,7 +288,7 @@ app.get('/', function (req, res) {
 });
 
 if (!process.env.TESTING) {
-  const port = process.env.PORT || 8080;
+  const { port, bindHost } = getServerConfig(process.env);
   const httpServer = http.createServer(app);
   // Set the Keep-Alive and headers timeout to 100 seconds
   httpServer.keepAliveTimeout = 100000; // in milliseconds
@@ -299,7 +300,7 @@ if (!process.env.TESTING) {
     // otherwise the platform's readiness probe never succeeds and the deploy is killed.
     console.error('Database migration failed:', error);
   }
-  httpServer.listen(port, '0.0.0.0', function () {
+  httpServer.listen(port, bindHost, function () {
     console.log('opensign-server running on port ' + port + '.');
     const isWindows = process.platform === 'win32';
     // console.log('isWindows', isWindows);
