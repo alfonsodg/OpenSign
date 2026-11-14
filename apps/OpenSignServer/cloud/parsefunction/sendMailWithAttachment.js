@@ -12,6 +12,7 @@ import { getServerConfig, rewritePublicApiUrl } from '../../utils/serverConfig.j
 import { renderComplaintFooter, resolveBrandContext } from '../../utils/brandContext.js';
 import { createTransport } from 'nodemailer';
 import axios from 'axios';
+import { getSmtpPort } from '../../utils/envConfig.js';
 
 function safeUnlink(filePath, label = 'file') {
   if (fs.existsSync(filePath)) {
@@ -36,7 +37,7 @@ async function sendMailProvider(params) {
     if (smtpenable) {
       let transporterConfig = {
         host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT || 465,
+        port: getSmtpPort(process.env),
         secure: smtpsecure,
       };
 
